@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: dev
+
+  application:
+    name: solex-backend
+
+  datasource:
+    url: jdbc:123
+    username: username
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+

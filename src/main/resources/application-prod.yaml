@@ -1,0 +1,15 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
