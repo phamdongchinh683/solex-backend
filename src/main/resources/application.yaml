@@ -21,3 +21,10 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3155760000000
+  
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
