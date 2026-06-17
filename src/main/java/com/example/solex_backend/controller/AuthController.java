@@ -34,7 +34,7 @@ public class AuthController {
         return ApiResponse.ok("OK", response);
     }
 
-    @Operation(summary = "Send OTP code to email or phone")
+    @Operation(summary = "Send OTP code")
     @PostMapping("/otp/send")
     public ApiResponse<AuthResponse> sendOtp(@RequestBody SendOtpRequest request) {
         otpService.sendOtp(request);

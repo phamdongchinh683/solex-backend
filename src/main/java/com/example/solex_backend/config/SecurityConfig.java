@@ -1,6 +1,5 @@
 package com.example.solex_backend.config;
 
-import com.example.solex_backend.domain.User;
 import com.example.solex_backend.repository.UserRepository;
 import com.example.solex_backend.util.Jwt;
 import jakarta.servlet.FilterChain;

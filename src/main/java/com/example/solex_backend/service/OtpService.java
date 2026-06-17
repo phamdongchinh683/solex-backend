@@ -7,6 +7,8 @@ import com.example.solex_backend.dto.request.VerifyOtpRequest;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.repository.UserOtpRepository;
 import com.example.solex_backend.repository.UserRepository;
+import com.example.solex_backend.service.notification.EmailPort;
+import com.example.solex_backend.service.notification.SmsPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,8 @@ public class OtpService {
 
     private final UserOtpRepository userOtpRepository;
     private final UserRepository userRepository;
+    private final EmailPort emailPort;
+    private final SmsPort smsPort;
 
     private static final int OTP_EXPIRY_MINUTES = 2;
     private static final int OTP_LENGTH = 6;
@@ -40,18 +44,24 @@ public class OtpService {
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
         switch (params.getField()) {
-            case EMAIL -> userOtpRepository.upsertOtpByEmail(
-                    params.getValue(),
-                    null,
-                    otp,
-                    expiresAt
-            );
-            case PHONE -> userOtpRepository.upsertOtpByPhone(
-                    null,
-                    params.getValue(),
-                    otp,
-                    expiresAt
-            );
+            case EMAIL -> {
+                userOtpRepository.upsertOtpByEmail(
+                        params.getValue(),
+                        null,
+                        otp,
+                        expiresAt
+                );
+                emailPort.sendOtp(params.getValue(), otp);
+            }
+            case PHONE -> {
+                userOtpRepository.upsertOtpByPhone(
+                        null,
+                        params.getValue(),
+                        otp,
+                        expiresAt
+                );
+                smsPort.sendOtp(params.getValue(), otp);
+            }
         }
     }
 
