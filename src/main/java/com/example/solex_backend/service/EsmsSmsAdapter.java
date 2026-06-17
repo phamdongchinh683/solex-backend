@@ -1,8 +1,8 @@
-package com.example.solex_backend.service.notification;
+package com.example.solex_backend.service;
 
-import com.example.solex_backend.config.EsmsConfig;
-import org.springframework.web.client.RestClient;
+import com.example.solex_backend.config.EsmsSmsConfig;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 @Component
 public class EsmsSmsAdapter implements SmsPort {
@@ -10,9 +10,9 @@ public class EsmsSmsAdapter implements SmsPort {
     private static final String ESMS_URL = "https://rest.esms.vn/MainService.svc/json/SendMultipleMessage_V4_get";
 
     private final RestClient restClient;
-    private final EsmsConfig esmsConfig;
+    private final EsmsSmsConfig esmsConfig;
 
-    public EsmsSmsAdapter(EsmsConfig esmsConfig) {
+    public EsmsSmsAdapter(EsmsSmsConfig esmsConfig) {
         this.esmsConfig = esmsConfig;
         this.restClient = RestClient.create();
     }
@@ -25,12 +25,12 @@ public class EsmsSmsAdapter implements SmsPort {
                 + "&SecretKey=" + esmsConfig.getSecret()
                 + "&Phone=" + to
                 + "&Content=" + org.springframework.web.util.UriUtils.encode(content, java.nio.charset.StandardCharsets.UTF_8)
-                + "&SmsType=8"
-                + "&IsUnicode=1";
+                + "&Brandname=Solex"
+                + "&SmsType=2"
+                + "&IsUnicode=0";
 
         restClient.get()
                 .uri(url)
-                .headers(headers -> headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON))
                 .retrieve()
                 .toBodilessEntity();
     }

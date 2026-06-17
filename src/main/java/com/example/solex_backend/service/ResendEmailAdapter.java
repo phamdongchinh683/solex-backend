@@ -1,6 +1,6 @@
-package com.example.solex_backend.service.notification;
+package com.example.solex_backend.service;
 
-import com.example.solex_backend.config.ResendConfig;
+import com.example.solex_backend.config.ResendEmailConfig;
 import org.springframework.web.client.RestClient;
 import org.springframework.stereotype.Component;
 
@@ -10,9 +10,9 @@ public class ResendEmailAdapter implements EmailPort {
     private static final String RESEND_URL = "https://api.resend.com/emails";
 
     private final RestClient restClient;
-    private final ResendConfig resendConfig;
+    private final ResendEmailConfig resendConfig;
 
-    public ResendEmailAdapter(ResendConfig resendConfig) {
+    public ResendEmailAdapter(ResendEmailConfig resendConfig) {
         this.resendConfig = resendConfig;
         this.restClient = RestClient.create();
     }
@@ -23,7 +23,8 @@ public class ResendEmailAdapter implements EmailPort {
                 "Solex <noreply@tiennguyen107.io.vn>",
                 to,
                 "Your OTP code",
-                "<p>Your OTP is: <strong>" + otp + "</strong></p>");
+                "<p>Your OTP is: <strong>" + otp + "</strong></p>"
+        );
 
         restClient.post()
                 .uri(RESEND_URL)

@@ -7,8 +7,6 @@ import com.example.solex_backend.dto.request.VerifyOtpRequest;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.repository.UserOtpRepository;
 import com.example.solex_backend.repository.UserRepository;
-import com.example.solex_backend.service.notification.EmailPort;
-import com.example.solex_backend.service.notification.SmsPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +27,6 @@ public class OtpService {
     private static final int OTP_EXPIRY_MINUTES = 2;
     private static final int OTP_LENGTH = 6;
 
-
     private String generateOtp() {
         SecureRandom random = new SecureRandom();
         StringBuilder otp = new StringBuilder();
@@ -49,8 +46,7 @@ public class OtpService {
                         params.getValue(),
                         null,
                         otp,
-                        expiresAt
-                );
+                        expiresAt);
                 emailPort.sendOtp(params.getValue(), otp);
             }
             case PHONE -> {
@@ -58,8 +54,7 @@ public class OtpService {
                         null,
                         params.getValue(),
                         otp,
-                        expiresAt
-                );
+                        expiresAt);
                 smsPort.sendOtp(params.getValue(), otp);
             }
         }
