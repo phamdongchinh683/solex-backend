@@ -13,6 +13,13 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: "DEALLOCATE ALL"
+      data-source-properties:
+        preparedStatementCacheQueries: 0
+  sql:
+    init:
+      mode: always
   jpa:
     hibernate:
       ddl-auto: update
@@ -32,6 +39,17 @@ esms:
   api-key: ${ESMS_API_KEY}
   secret: ${ESMS_SECRET}
   
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+
+vnpay:
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/vnpay/return}
+  ipn-url: ${VNPAY_IPN_URL:http://localhost:8080/api/v1/payments/vnpay/ipn}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

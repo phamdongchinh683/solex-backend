@@ -15,4 +15,16 @@ public final class Enums {
         OPERATOR
     }
 
+    public enum PaymentMethod {
+        STRIPE, VNPAY, COD
+    }
+
+    public enum PaymentStatus {
+        PENDING, SUCCESS, FAILED, REFUNDED
+    }
+
+    public enum CouponDiscountType {
+        PERCENTAGE, FIXED_AMOUNT
+    }
+
 }

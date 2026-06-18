@@ -3,8 +3,6 @@ package com.example.solex_backend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "addresses", indexes = {
     @Index(name = "idx_address_user_id", columnList = "user_id"),
@@ -16,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Address {
+public class Address extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,9 +23,6 @@ public class Address {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @Column(length = 50)
-    private String label;
 
     @Column(name = "first_name", nullable = false, length = 200)
     private String firstName;
@@ -38,28 +33,15 @@ public class Address {
     @Column(nullable = false, length = 20)
     private String phone;
 
-    @Column(columnDefinition = "text", nullable = false)
-    private String street;
+    @Column(nullable = false)
+    private double longitude;
 
-    @Column(length = 100)
-    private String ward;
+    @Column(nullable = false)
+    private double latitude;
 
-    @Column(length = 100)
-    private String district;
-
-    @Column(nullable = false, length = 100)
-    private String province;
+    @Column(columnDefinition = "text")
+    private String addressDetail;
 
     @Column(name = "is_default")
     private Boolean isDefault;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        if (isDefault == null)
-            isDefault = false;
-    }
 }

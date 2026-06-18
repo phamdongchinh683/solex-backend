@@ -52,7 +52,7 @@ public class AuthController {
     @PostMapping("/otp/verify")
     public ApiResponse<Void> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         otpService.verifyOtp(request);
-        return ApiResponse.ok("OTP verified successfully", null);
+        return ApiResponse.ok("OK", null);
     }
 
     @Operation(summary = "Logout and invalidate current token")

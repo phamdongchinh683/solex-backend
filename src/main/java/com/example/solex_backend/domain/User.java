@@ -3,8 +3,6 @@ package com.example.solex_backend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 import com.example.solex_backend.util.Enums;
 
 @Entity
@@ -14,7 +12,7 @@ import com.example.solex_backend.util.Enums;
     @Index(name = "idx_user_is_active", columnList = "is_active")
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,21 +47,4 @@ public class User {
 
     @Column(name = "is_active")
     private Integer isActive;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
 }

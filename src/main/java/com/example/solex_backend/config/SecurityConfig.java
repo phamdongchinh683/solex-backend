@@ -9,9 +9,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,11 +25,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final Jwt jwtUtil;
@@ -52,11 +54,15 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/v1/customer/sign-up",
+                    "/api/v1/operator/sign-up",
                     "/health",
                     "/api/v1/auth/sign-in",
                     "/api/v1/auth/otp/send",
                     "/api/v1/auth/contact/check",
                     "/api/v1/auth/otp/verify",
+                    "/api/v1/payments/stripe/webhook",
+                    "/api/v1/payments/vnpay/ipn",
+                    "/api/v1/payments/vnpay/return",
                     "/swagger-ui.html",
                     "/swagger-ui/**",
                     "/api-docs/**",
@@ -87,17 +93,21 @@ public class SecurityConfig {
                         int tokenVersion = jwtUtil.extractTokenVersion(token);
 
                         boolean tokenValid = userRepository.findById(userId)
-                                .map(user -> user.getTokenVersion() == tokenVersion)
+                                .map(user -> user.getTokenVersion() == tokenVersion
+                                        && Integer.valueOf(1).equals(user.getIsActive()))
                                 .orElse(false);
 
                         if (tokenValid) {
-                            UsernamePasswordAuthenticationToken authentication =
-                                    new UsernamePasswordAuthenticationToken(
-                                            userId, null,
-                                            Collections.singletonList(() -> "ROLE_" + role)
-                                    );
-                            authentication.setDetails(token);
-                            SecurityContextHolder.getContext().setAuthentication(authentication);
+                            var user = userRepository.findById(userId).orElse(null);
+                            if (user != null) {
+                                UsernamePasswordAuthenticationToken authentication =
+                                        new UsernamePasswordAuthenticationToken(
+                                                user, null,
+                                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                                        );
+                                authentication.setDetails(token);
+                                SecurityContextHolder.getContext().setAuthentication(authentication);
+                            }
                         }
                     }
                 }

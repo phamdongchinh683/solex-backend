@@ -1,16 +1,16 @@
 package com.example.solex_backend.dto.request;
 
 import com.example.solex_backend.util.Enums;
-
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-@Data
-public class SendOtpRequest {
+public record SendOtpRequest(
+        @Schema(description = "Field type to send OTP: EMAIL or PHONE")
+        @NotNull(message = "Field is required")
+        Enums.OtpType field,
 
-    @Schema(description = "Field type to send OTP: EMAIL or PHONE")
-    private Enums.OtpType field;
-
-    @Schema(description = "Email address or phone number to receive OTP")
-    private String value;
-}
+        @Schema(description = "Email address or phone number to receive OTP")
+        @NotBlank(message = "Value is required")
+        String value
+) {}

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Payment {
+public class Payment extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,12 +41,8 @@ public class Payment {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
         if (status == null) status = "PENDING";
     }
 }

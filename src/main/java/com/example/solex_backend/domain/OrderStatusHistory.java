@@ -3,8 +3,6 @@ package com.example.solex_backend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "order_status_history")
 @Getter
@@ -12,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderStatusHistory {
+public class OrderStatusHistory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,12 +29,4 @@ public class OrderStatusHistory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "changed_by")
     private User changedBy;
-
-    @Column(name = "changed_at", updatable = false)
-    private LocalDateTime changedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        changedAt = LocalDateTime.now();
-    }
 }

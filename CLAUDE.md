@@ -241,3 +241,4 @@ OrderStatus: PENDING → CONFIRMED → PREPARING → READY → DELIVERING → DE
 - NEVER create a god-service — split by responsibility
 - NEVER use if/else on PaymentMethod enum — use Strategy pattern
 - NEVER scatter status transition checks — use OrderState sealed interface
+- NEVER NOT SHOW FIELDS NOT NESSECARY COLUMN

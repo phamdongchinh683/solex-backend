@@ -8,11 +8,11 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "product_variants", indexes = {
     @Index(name = "idx_pvariant_product_id", columnList = "product_id"),
-    @Index(name = "idx_pvariant_is_active", columnList = "is_active"),
-    @Index(name = "idx_pvariant_sku", columnList = "sku")
+    @Index(name = "idx_pvariant_is_active",  columnList = "is_active"),
+    @Index(name = "idx_pvariant_sku",        columnList = "sku")
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class ProductVariant {
+public class ProductVariant extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,9 +27,6 @@ public class ProductVariant {
 
     @Column(length = 20)
     private String size;
-
-    @Column(length = 50)
-    private String color;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;

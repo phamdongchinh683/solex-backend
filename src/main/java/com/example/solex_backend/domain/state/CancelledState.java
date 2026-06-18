@@ -1,0 +1,29 @@
+package com.example.solex_backend.domain.state;
+
+import com.example.solex_backend.exception.BusinessException;
+
+public final class CancelledState implements OrderState {
+    public static final CancelledState INSTANCE = new CancelledState();
+
+    private CancelledState() {}
+
+    @Override
+    public String status() {
+        return "CANCELLED";
+    }
+
+    @Override
+    public OrderState confirm() {
+        throw new BusinessException("Cannot confirm a cancelled order");
+    }
+
+    @Override
+    public OrderState cancel() {
+        return this;
+    }
+
+    @Override
+    public OrderState nextStep() {
+        throw new BusinessException("Cannot advance from CANCELLED state");
+    }
+}

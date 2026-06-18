@@ -1,8 +1,10 @@
 package com.example.solex_backend.exception;
 
 import com.example.solex_backend.dto.ApiResponse;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -45,6 +47,18 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(msg));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException ex) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof InvalidFormatException ife && !ife.getPath().isEmpty()) {
+            String field = ife.getPath().get(0).getFieldName();
+            String expected = ife.getTargetType().getSimpleName();
+            String msg = field + ": invalid value, expected type " + expected;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(msg));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error("Invalid request body"));
     }
 
     @ExceptionHandler(Exception.class)

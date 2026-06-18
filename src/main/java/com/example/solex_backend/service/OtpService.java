@@ -40,22 +40,14 @@ public class OtpService {
         String otp = generateOtp();
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
-        switch (params.getField()) {
+        switch (params.field()) {
             case EMAIL -> {
-                userOtpRepository.upsertOtpByEmail(
-                        params.getValue(),
-                        null,
-                        otp,
-                        expiresAt);
-                emailPort.sendOtp(params.getValue(), otp);
+                userOtpRepository.upsertOtpByEmail(params.value(), null, otp, expiresAt);
+                emailPort.sendOtp(params.value(), otp);
             }
             case PHONE -> {
-                userOtpRepository.upsertOtpByPhone(
-                        null,
-                        params.getValue(),
-                        otp,
-                        expiresAt);
-                smsPort.sendOtp(params.getValue(), otp);
+                userOtpRepository.upsertOtpByPhone(null, params.value(), otp, expiresAt);
+                smsPort.sendOtp(params.value(), otp);
             }
         }
     }
@@ -79,22 +71,17 @@ public class OtpService {
     }
 
     public boolean checkContactExists(ContactCheckRequest request) {
-        switch (request.getField()) {
-            case EMAIL -> {
-                return userRepository.findByEmail(request.getValue()).isPresent();
-            }
-            case PHONE -> {
-                return userRepository.findByPhone(request.getValue()).isPresent();
-            }
-            default -> throw new BusinessException("Invalid field type");
-        }
+        return switch (request.field()) {
+            case EMAIL -> userRepository.findByEmail(request.value()).isPresent();
+            case PHONE -> userRepository.findByPhone(request.value()).isPresent();
+        };
     }
 
     public void verifyOtp(VerifyOtpRequest request) {
-        UserOtp userOtp = switch (request.getField()) {
-            case EMAIL -> userOtpRepository.findByEmail(request.getValue())
+        UserOtp userOtp = switch (request.field()) {
+            case EMAIL -> userOtpRepository.findByEmail(request.value())
                     .orElseThrow(() -> new BusinessException("OTP not found for this email"));
-            case PHONE -> userOtpRepository.findByPhone(request.getValue())
+            case PHONE -> userOtpRepository.findByPhone(request.value())
                     .orElseThrow(() -> new BusinessException("OTP not found for this phone"));
         };
 
@@ -102,7 +89,7 @@ public class OtpService {
             throw new BusinessException("OTP has expired");
         }
 
-        if (!request.getOtp().equals(userOtp.getOtp())) {
+        if (!request.otp().equals(userOtp.getOtp())) {
             throw new BusinessException("Invalid OTP");
         }
 
@@ -111,5 +98,4 @@ public class OtpService {
         userOtp.setVerified(true);
         userOtpRepository.save(userOtp);
     }
-
 }
