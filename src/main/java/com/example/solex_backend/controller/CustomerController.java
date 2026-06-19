@@ -5,6 +5,10 @@ import com.example.solex_backend.dto.ApiResponse;
 import com.example.solex_backend.dto.request.*;
 import com.example.solex_backend.dto.response.*;
 import com.example.solex_backend.service.*;
+import com.example.solex_backend.dto.response.CouponResponse;
+import com.example.solex_backend.dto.response.CardResponse;
+import com.example.solex_backend.dto.response.SetupIntentResponse;
+import com.example.solex_backend.service.payment.StripeCardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,6 +39,8 @@ public class CustomerController {
     private final ProductService productService;
     private final ProductVariantService productVariantService;
     private final RestaurantService restaurantService;
+    private final CouponService couponService;
+    private final StripeCardService stripeCardService;
 
 
     @Operation(summary = "Register a new customer account")
@@ -125,6 +131,12 @@ public class CustomerController {
     }
 
 
+    @Operation(summary = "Get active coupons for a restaurant")
+    @GetMapping("/restaurants/{restaurantId}/coupons")
+    public ApiResponse<List<CouponResponse>> getRestaurantCoupons(@PathVariable Long restaurantId) {
+        return ApiResponse.ok("OK", couponService.getActiveCouponsForRestaurant(restaurantId));
+    }
+
     @Operation(summary = "Get restaurant ratings")
     @GetMapping("/restaurants/{restaurantId}/ratings")
     public ApiResponse<List<RatingResponse>> getRestaurantRatings(@PathVariable Long restaurantId) {
@@ -161,6 +173,36 @@ public class CustomerController {
         return ApiResponse.ok("OK", productVariantService.getVariantById(id, variantId));
     }
 
+
+    @Operation(summary = "Create Stripe SetupIntent — use returned clientSecret with Stripe.js to save a card")
+    @PostMapping("/cards/setup")
+    public ApiResponse<SetupIntentResponse> createSetupIntent(@AuthenticationPrincipal User user) {
+        return ApiResponse.ok("OK", stripeCardService.createSetupIntent(user));
+    }
+
+    @Operation(summary = "List saved cards")
+    @GetMapping("/cards")
+    public ApiResponse<List<CardResponse>> listCards(@AuthenticationPrincipal User user) {
+        return ApiResponse.ok("OK", stripeCardService.listCards(user));
+    }
+
+    @Operation(summary = "Set a card as default")
+    @PutMapping("/cards/{paymentMethodId}/default")
+    public ApiResponse<Void> setDefaultCard(
+            @AuthenticationPrincipal User user,
+            @PathVariable String paymentMethodId) {
+        stripeCardService.setDefaultCard(user, paymentMethodId);
+        return ApiResponse.ok("Default card updated", null);
+    }
+
+    @Operation(summary = "Remove a saved card")
+    @DeleteMapping("/cards/{paymentMethodId}")
+    public ApiResponse<Void> removeCard(
+            @AuthenticationPrincipal User user,
+            @PathVariable String paymentMethodId) {
+        stripeCardService.removeCard(user, paymentMethodId);
+        return ApiResponse.ok("Card removed", null);
+    }
 
     @Operation(summary = "Get current user's cart items")
     @GetMapping("/cart")

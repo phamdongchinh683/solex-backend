@@ -56,6 +56,7 @@ public class OrderService {
 
         Order order = Order.builder()
                 .user(user)
+                .restaurant(restaurant)
                 .address(address)
                 .orderCode(generateOrderCode())
                 .status("PENDING")

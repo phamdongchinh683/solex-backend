@@ -61,4 +61,7 @@ public class Restaurant extends BaseEntity {
 
     @Column(columnDefinition = "text")
     private String imageUrl;
+
+    @Column(name = "stripe_account_id", length = 100)
+    private String stripeAccountId;
 }

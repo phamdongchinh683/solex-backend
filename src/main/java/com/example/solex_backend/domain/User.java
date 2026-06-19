@@ -47,4 +47,7 @@ public class User extends BaseEntity {
 
     @Column(name = "is_active")
     private Integer isActive;
+
+    @Column(name = "stripe_customer_id", length = 100)
+    private String stripeCustomerId;
 }

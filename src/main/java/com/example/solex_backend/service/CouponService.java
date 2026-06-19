@@ -2,10 +2,15 @@ package com.example.solex_backend.service;
 
 import com.example.solex_backend.domain.Coupon;
 import com.example.solex_backend.domain.Order;
+import com.example.solex_backend.domain.Restaurant;
+import com.example.solex_backend.domain.User;
+import com.example.solex_backend.dto.request.CreateCouponRequest;
+import com.example.solex_backend.dto.response.CouponResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.CouponRepository;
 import com.example.solex_backend.repository.OrderRepository;
+import com.example.solex_backend.repository.RestaurantRepository;
 import com.example.solex_backend.util.Enums.CouponDiscountType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +28,68 @@ public class CouponService {
 
     private final CouponRepository couponRepository;
     private final OrderRepository orderRepository;
+    private final RestaurantRepository restaurantRepository;
+
+    @Transactional(readOnly = true)
+    public List<CouponResponse> getActiveCouponsForRestaurant(Long restaurantId) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+        return couponRepository.findActiveByRestaurant(restaurant, LocalDateTime.now())
+                .stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CouponResponse> getOperatorCoupons(User operator) {
+        Restaurant restaurant = restaurantRepository.findByOperator(operator)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
+        return couponRepository.findByRestaurant(restaurant)
+                .stream().map(this::toResponse).toList();
+    }
+
+    public CouponResponse createCoupon(User operator, CreateCouponRequest request) {
+        Restaurant restaurant = restaurantRepository.findByOperator(operator)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
+
+        if (request.expiryDate().isBefore(request.startDate())) {
+            throw new BusinessException("Expiry date must be after start date");
+        }
+
+        if (couponRepository.findByCode(request.code()).isPresent()) {
+            throw new BusinessException("Coupon code already exists: " + request.code());
+        }
+
+        Coupon coupon = Coupon.builder()
+                .restaurant(restaurant)
+                .code(request.code().toUpperCase())
+                .discountType(request.discountType())
+                .discountValue(request.discountValue())
+                .minOrderAmount(request.minOrderAmount())
+                .maxDiscountAmount(request.maxDiscountAmount())
+                .usageLimit(request.usageLimit())
+                .startDate(request.startDate())
+                .expiryDate(request.expiryDate())
+                .build();
+
+        return toResponse(couponRepository.save(coupon));
+    }
+
+    private CouponResponse toResponse(Coupon c) {
+        return new CouponResponse(
+                c.getId(),
+                c.getRestaurant().getId(),
+                c.getCode(),
+                c.getDiscountType(),
+                c.getDiscountValue(),
+                c.getMinOrderAmount(),
+                c.getMaxDiscountAmount(),
+                c.getUsageLimit(),
+                c.getUsageCount(),
+                c.getStartDate(),
+                c.getExpiryDate(),
+                c.getIsActive(),
+                c.getCreatedAt()
+        );
+    }
 
     /**
      * Validates the coupon and applies the discount to the order.

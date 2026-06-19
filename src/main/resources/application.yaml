@@ -42,13 +42,14 @@ esms:
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  connect:
+    return-url: ${STRIPE_CONNECT_RETURN_URL:http://localhost:3000/operator/stripe/return}
 
 vnpay:
   tmn-code: ${VNPAY_TMN_CODE:}
   hash-secret: ${VNPAY_HASH_SECRET:}
   payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/vnpay/return}
-  ipn-url: ${VNPAY_IPN_URL:http://localhost:8080/api/v1/payments/vnpay/ipn}
+  return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/vnpay/ipn}
 
 springdoc:
   swagger-ui:

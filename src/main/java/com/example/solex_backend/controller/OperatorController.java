@@ -4,6 +4,8 @@ import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.ApiResponse;
 import com.example.solex_backend.dto.request.*;
 import com.example.solex_backend.dto.response.*;
+import com.example.solex_backend.service.CouponService;
+import com.example.solex_backend.service.payment.StripeAccountService;
 import com.example.solex_backend.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -31,6 +33,8 @@ public class OperatorController {
     private final ProductService productService;
     private final ProductVariantService productVariantService;
     private final CategoryService categoryService;
+    private final CouponService couponService;
+    private final StripeAccountService stripeAccountService;
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +79,36 @@ public class OperatorController {
             @RequestParam String reason) {
         orderStatusService.cancelOrder(id, operator, reason);
         return ApiResponse.ok("Order cancelled", null);
+    }
+
+    // ── Stripe Connect ────────────────────────────────────────────────────────
+
+    @Operation(summary = "Create or refresh Stripe Connect account — returns onboarding URL")
+    @PostMapping("/stripe/connect")
+    public ApiResponse<StripeConnectResponse> stripeConnect(@AuthenticationPrincipal User operator) {
+        return ApiResponse.ok("OK", stripeAccountService.createConnectAccount(operator));
+    }
+
+    @Operation(summary = "Get Stripe connected account balance")
+    @GetMapping("/stripe/balance")
+    public ApiResponse<StripeBalanceResponse> stripeBalance(@AuthenticationPrincipal User operator) {
+        return ApiResponse.ok("OK", stripeAccountService.getConnectedBalance(operator));
+    }
+
+    // ── Coupons ───────────────────────────────────────────────────────────────
+
+    @Operation(summary = "Get all coupons for my restaurant")
+    @GetMapping("/coupons")
+    public ApiResponse<List<CouponResponse>> getCoupons(@AuthenticationPrincipal User operator) {
+        return ApiResponse.ok("OK", couponService.getOperatorCoupons(operator));
+    }
+
+    @Operation(summary = "Create a coupon for my restaurant")
+    @PostMapping("/coupons")
+    public ApiResponse<CouponResponse> createCoupon(
+            @AuthenticationPrincipal User operator,
+            @Valid @RequestBody CreateCouponRequest request) {
+        return ApiResponse.ok("Coupon created", couponService.createCoupon(operator, request));
     }
 
     // ── Restaurant ────────────────────────────────────────────────────────────
