@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import com.example.solex_backend.util.Enums;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users", indexes = {
@@ -50,4 +51,10 @@ public class User extends BaseEntity {
 
     @Column(name = "stripe_customer_id", length = 100)
     private String stripeCustomerId;
+
+    @Column(name = "last_change_email")
+    private LocalDateTime lastChangeEmail;
+
+    @Column(name = "last_change_phone")
+    private LocalDateTime lastChangePhone;
 }

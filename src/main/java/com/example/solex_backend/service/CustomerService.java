@@ -20,9 +20,12 @@ public class CustomerService {
     }
 
     public UserInfoResponse updateProfile(User user, UpdateProfileRequest request) {
-        if (request.firstName() != null) user.setFirstName(request.firstName());
-        if (request.lastName() != null) user.setLastName(request.lastName());
-        if (request.phone() != null) user.setPhone(request.phone());
+        if (request.firstName() != null)
+            user.setFirstName(request.firstName());
+        if (request.lastName() != null)
+            user.setLastName(request.lastName());
+        if (request.phone() != null)
+            user.setPhone(request.phone());
         userRepository.save(user);
         return toResponse(user);
     }
@@ -31,7 +34,7 @@ public class CustomerService {
         return new UserInfoResponse(
                 user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
                 user.getPhone(), user.getRole(), user.getIsEmailVerified(),
-                user.getIsPhoneVerified(), user.getIsActive(), user.getCreatedAt()
-        );
+                user.getIsPhoneVerified(), user.getIsActive(), user.getCreatedAt(),
+                user.getLastChangeEmail(), user.getLastChangePhone());
     }
 }

@@ -2,13 +2,16 @@ package com.example.solex_backend.service;
 
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
+import com.example.solex_backend.domain.UserOtp;
 import com.example.solex_backend.dto.request.LoginRequest;
 import com.example.solex_backend.dto.request.OperatorSignupRequest;
 import com.example.solex_backend.dto.request.SignupRequest;
+import com.example.solex_backend.dto.request.UpdateContactRequest;
 import com.example.solex_backend.dto.response.AuthResponse;
 import com.example.solex_backend.dto.response.UserInfoResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.repository.RestaurantRepository;
+import com.example.solex_backend.repository.UserOtpRepository;
 import com.example.solex_backend.repository.UserRepository;
 import com.example.solex_backend.util.Enums;
 import com.example.solex_backend.util.Jwt;
@@ -17,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -24,16 +29,19 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
+    private final UserOtpRepository userOtpRepository;
     private final PasswordEncoder passwordEncoder;
     private final Jwt jwt;
     private final OtpService otpService;
+
+    private static final long CONTACT_CHANGE_COOLDOWN_HOURS = 24;
 
     private UserInfoResponse toUserInfoResponse(User user) {
         return new UserInfoResponse(
                 user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(),
                 user.getPhone(), user.getRole(), user.getIsEmailVerified(),
-                user.getIsPhoneVerified(), user.getIsActive(), user.getCreatedAt()
-        );
+                user.getIsPhoneVerified(), user.getIsActive(), user.getCreatedAt(),
+                user.getLastChangeEmail(), user.getLastChangePhone());
     }
 
     public AuthResponse signupOperator(OperatorSignupRequest request) {
@@ -107,6 +115,54 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("User not found"));
         user.setTokenVersion(user.getTokenVersion() + 1);
+        userRepository.save(user);
+    }
+
+    public void updateContact(User user, UpdateContactRequest request) {
+        LocalDateTime now = LocalDateTime.now();
+
+        switch (request.field()) {
+            case EMAIL -> {
+                if (user.getLastChangeEmail() != null &&
+                        user.getLastChangeEmail().plusHours(CONTACT_CHANGE_COOLDOWN_HOURS).isAfter(now)) {
+                    throw new BusinessException("Email can only be changed once every 24 hours");
+                }
+            }
+            case PHONE -> {
+                if (user.getLastChangePhone() != null &&
+                        user.getLastChangePhone().plusHours(CONTACT_CHANGE_COOLDOWN_HOURS).isAfter(now)) {
+                    throw new BusinessException("Phone can only be changed once every 24 hours");
+                }
+            }
+        }
+
+        UserOtp userOtp = switch (request.field()) {
+            case EMAIL -> userOtpRepository.findByEmail(request.value())
+                    .orElseThrow(() -> new BusinessException("OTP not found for this email — send OTP first"));
+            case PHONE -> userOtpRepository.findByPhone(request.value())
+                    .orElseThrow(() -> new BusinessException("OTP not found for this phone — send OTP first"));
+        };
+
+        if (userOtp.getExpiresAt() == null || userOtp.getExpiresAt().isBefore(now)) {
+            throw new BusinessException("OTP has expired");
+        }
+        if (!request.otp().equals(userOtp.getOtp())) {
+            throw new BusinessException("Invalid OTP");
+        }
+
+        switch (request.field()) {
+            case EMAIL -> {
+                user.setEmail(request.value());
+                user.setLastChangeEmail(now);
+            }
+            case PHONE -> {
+                user.setPhone(request.value());
+                user.setLastChangePhone(now);
+            }
+        }
+        userOtp.setOtp(null);
+        userOtp.setExpiresAt(null);
+        userOtpRepository.save(userOtp);
         userRepository.save(user);
     }
 

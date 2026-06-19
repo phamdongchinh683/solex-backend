@@ -1,13 +1,16 @@
 package com.example.solex_backend.controller;
 
+import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.ApiResponse;
 import com.example.solex_backend.dto.request.ContactCheckRequest;
 import com.example.solex_backend.dto.request.LoginRequest;
 import com.example.solex_backend.dto.request.SendOtpRequest;
+import com.example.solex_backend.dto.request.UpdateContactRequest;
 import com.example.solex_backend.dto.request.VerifyOtpRequest;
 import com.example.solex_backend.dto.response.AuthResponse;
 import com.example.solex_backend.service.AuthService;
 import com.example.solex_backend.service.OtpService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -53,6 +56,16 @@ public class AuthController {
     public ApiResponse<Void> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         otpService.verifyOtp(request);
         return ApiResponse.ok("OK", null);
+    }
+
+    @Operation(summary = "Update email or phone — requires OTP sent to the new value first, 24h cooldown applies")
+    @SecurityRequirement(name = "bearerAuth")
+    @PutMapping("/contact")
+    public ApiResponse<Void> updateContact(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody UpdateContactRequest request) {
+        authService.updateContact(user, request);
+        return ApiResponse.ok("Contact updated", null);
     }
 
     @Operation(summary = "Logout and invalidate current token")

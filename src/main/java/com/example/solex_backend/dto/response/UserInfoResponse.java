@@ -15,5 +15,7 @@ public record UserInfoResponse(
         @Schema(description = "Email verified flag")        Integer isEmailVerified,
         @Schema(description = "Phone verified flag")        Integer isPhoneVerified,
         @Schema(description = "Account active flag")        Integer isActive,
-        @Schema(description = "Account creation timestamp") LocalDateTime createdAt
+        @Schema(description = "Account creation timestamp") LocalDateTime createdAt,
+        @Schema(description = "Last email change timestamp") LocalDateTime lastChangeEmail,
+        @Schema(description = "Last phone change timestamp") LocalDateTime lastChangePhone
 ) {}
