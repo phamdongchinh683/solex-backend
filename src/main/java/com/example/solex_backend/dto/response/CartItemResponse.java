@@ -1,7 +1,5 @@
 package com.example.solex_backend.dto.response;
 
-import com.example.solex_backend.dto.response.ProductResponse;
-import com.example.solex_backend.dto.response.ProductVariantResponse;
 
 import java.math.BigDecimal;
 

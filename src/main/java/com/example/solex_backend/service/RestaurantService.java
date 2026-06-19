@@ -5,6 +5,7 @@ import com.example.solex_backend.domain.Product;
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateCategoryRequest;
+import com.example.solex_backend.dto.request.UpdateRestaurantRequest;
 import com.example.solex_backend.dto.response.CategoryResponse;
 import com.example.solex_backend.dto.response.ProductResponse;
 import com.example.solex_backend.dto.response.ProductVariantResponse;
@@ -111,6 +112,23 @@ public class RestaurantService {
                                 p.getId(), p.getName(), p.getDescription(), p.getBasePrice(),
                                 p.getIsActive(), p.getCategory().getId(), p.getCategory().getName(),
                                 images, variants);
+        }
+
+        @Transactional
+        public RestaurantResponse updateRestaurant(User operator, UpdateRestaurantRequest request) {
+                Restaurant restaurant = restaurantRepository.findByOperator(operator)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Restaurant not found for this operator"));
+
+                if (request.name() != null)          restaurant.setName(request.name());
+                if (request.description() != null)   restaurant.setDescription(request.description());
+                if (request.phone() != null)         restaurant.setPhone(request.phone());
+                if (request.addressDetail() != null) restaurant.setAddressDetail(request.addressDetail());
+                if (request.longitude() != null)     restaurant.setLongitude(request.longitude());
+                if (request.latitude() != null)      restaurant.setLatitude(request.latitude());
+                if (request.imageUrl() != null)      restaurant.setImageUrl(request.imageUrl());
+
+                return toRestaurantResponse(restaurantRepository.save(restaurant));
         }
 
         @Transactional

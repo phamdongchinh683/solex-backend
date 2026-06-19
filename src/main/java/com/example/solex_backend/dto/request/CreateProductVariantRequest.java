@@ -1,0 +1,37 @@
+package com.example.solex_backend.dto.request;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
+
+public record CreateProductVariantRequest(
+
+        @Schema(description = "Unique SKU code")
+        @NotBlank(message = "SKU cannot be empty")
+        @Size(max = 100, message = "SKU must not exceed 100 characters")
+        String sku,
+
+        @Schema(description = "Size label (e.g. S, M, L, XL)")
+        @Size(max = 20, message = "Size must not exceed 20 characters")
+        String size,
+
+        @Schema(description = "Variant price")
+        @NotNull(message = "Price is required")
+        @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+        BigDecimal price,
+
+        @Schema(description = "Stock quantity (default 0)")
+        @Min(value = 0, message = "Stock cannot be negative")
+        Integer stock,
+
+        @Schema(description = "Variant image URL")
+        String imageUrl,
+
+        @Schema(description = "Is variant active (default true)")
+        Boolean isActive
+) {}

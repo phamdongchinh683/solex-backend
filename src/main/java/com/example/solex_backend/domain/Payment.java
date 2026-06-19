@@ -35,6 +35,9 @@ public class Payment extends BaseEntity {
     @Column(name = "transaction_ref", length = 100)
     private String transactionRef;
 
+    @Column(name = "commission_amount", precision = 12, scale = 2)
+    private BigDecimal commissionAmount;
+
     @Column(name = "gateway_response", columnDefinition = "text")
     private String gatewayResponse;
 

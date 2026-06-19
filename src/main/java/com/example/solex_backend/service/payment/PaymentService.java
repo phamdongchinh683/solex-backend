@@ -10,12 +10,13 @@ import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.OrderRepository;
 import com.example.solex_backend.repository.PaymentRepository;
-import com.example.solex_backend.service.CouponService;
+import com.example.solex_backend.util.Enums.PaymentMethod;
 import com.example.solex_backend.util.Enums.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,9 +26,10 @@ import java.util.UUID;
 @Transactional
 public class PaymentService {
 
+    private static final BigDecimal STRIPE_COMMISSION_RATE = new BigDecimal("0.20");
+
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
-    private final CouponService couponService;
     private final List<PaymentStrategy> strategies;
 
     public PaymentIntentResponse initiatePayment(User user, CreatePaymentRequest request, String clientIp) {
@@ -47,17 +49,19 @@ public class PaymentService {
             throw new BusinessException("A pending payment already exists for this order");
         }
 
-        if (request.couponId() != null) {
-            couponService.applyToOrder(request.couponId(), order);
-        }
 
         String transactionRef = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+
+        BigDecimal commissionAmount = request.method() == PaymentMethod.STRIPE
+                ? order.getTotalAmount().multiply(STRIPE_COMMISSION_RATE)
+                : null;
 
         Payment payment = Payment.builder()
                 .order(order)
                 .method(request.method().name())
                 .status(PaymentStatus.PENDING.name())
                 .amount(order.getTotalAmount())
+                .commissionAmount(commissionAmount)
                 .transactionRef(transactionRef)
                 .build();
         paymentRepository.save(payment);
@@ -69,7 +73,6 @@ public class PaymentService {
 
         PaymentInitResult result = strategy.initiate(order, payment, clientIp);
 
-        // Stripe returns its own PaymentIntent ID as transactionRef
         if (result.transactionRef() != null && !result.transactionRef().equals(transactionRef)) {
             payment.setTransactionRef(result.transactionRef());
             paymentRepository.save(payment);
@@ -119,6 +122,7 @@ public class PaymentService {
                 p.getMethod(),
                 p.getStatus(),
                 p.getAmount(),
+                p.getCommissionAmount(),
                 p.getTransactionRef(),
                 p.getPaidAt(),
                 p.getCreatedAt()

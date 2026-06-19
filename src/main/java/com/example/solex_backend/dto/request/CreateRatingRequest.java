@@ -6,6 +6,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public record CreateRatingRequest(
+        @Schema(description = "Order ID being rated")
+        @NotNull(message = "Order ID cannot be null")
+        Long orderId,
+
         @Schema(description = "Restaurant rating from 1 to 5")
         @NotNull(message = "Rating cannot be null")
         @Min(value = 1, message = "Rating must be at least 1")

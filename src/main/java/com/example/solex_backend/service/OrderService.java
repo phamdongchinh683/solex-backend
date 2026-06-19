@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +24,8 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
     private final AddressRepository addressRepository;
+    private final ShippingService shippingService;
+    private final CouponService couponService;
 
     public OrderResponse createOrder(User user, CreateOrderRequest request) {
         Cart cart = cartRepository.findByUser(user)
@@ -45,7 +46,12 @@ public class OrderService {
                 .map(item -> item.getVariant().getPrice().multiply(new BigDecimal(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal shippingFee = BigDecimal.ZERO;
+        Restaurant restaurant = cartItems.get(0).getVariant().getProduct().getRestaurant();
+        double shippingFeeRaw = shippingService.calculateShippingFee(
+                restaurant.getLatitude(), restaurant.getLongitude(),
+                address.getLatitude(), address.getLongitude()
+        ).free();
+        BigDecimal shippingFee = BigDecimal.valueOf(shippingFeeRaw);
         BigDecimal totalAmount = subtotal.add(shippingFee);
 
         Order order = Order.builder()
@@ -62,18 +68,25 @@ public class OrderService {
         orderRepository.save(order);
 
         for (CartItem cartItem : cartItems) {
+                    BigDecimal unitPrice = cartItem.getVariant().getPrice();
+                    int qty = cartItem.getQuantity();
                     OrderItem orderItem = OrderItem.builder()
                             .order(order)
                             .productName(cartItem.getVariant().getProduct().getName())
                             .variant(cartItem.getVariant())
                             .sku(cartItem.getVariant().getSku())
-                            .quantity(cartItem.getQuantity())
-                            .unitPrice(cartItem.getVariant().getPrice())
+                            .quantity(qty)
+                            .unitPrice(unitPrice)
+                            .subtotal(unitPrice.multiply(BigDecimal.valueOf(qty)))
                             .build();
             order.getItems().add(orderItem);
         }
 
         cartItemRepository.deleteAll(cartItems);
+
+        if (request.couponId() != null) {
+            couponService.applyToOrder(request.couponId(), order);
+        }
 
         return toOrderResponse(order);
     }

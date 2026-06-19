@@ -11,8 +11,5 @@ public record CreatePaymentRequest(
 
         @Schema(description = "Payment method: STRIPE or VNPAY")
         @NotNull(message = "Payment method is required")
-        PaymentMethod method,
-
-        @Schema(description = "Optional coupon ID to apply a discount")
-        Long couponId
+        PaymentMethod method
 ) {}

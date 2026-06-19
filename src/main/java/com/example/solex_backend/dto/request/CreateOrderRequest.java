@@ -9,6 +9,9 @@ public record CreateOrderRequest(
         @NotNull(message = "Address ID cannot be null")
         Long addressId,
 
+        @Schema(description = "Optional coupon ID to apply a discount")
+        Long couponId,
+
         @Schema(description = "Optional note for the order")
         @Size(max = 500, message = "Note must not exceed 500 characters")
         String note

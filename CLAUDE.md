@@ -236,9 +236,9 @@ OrderStatus: PENDING → CONFIRMED → PREPARING → READY → DELIVERING → DE
 - NEVER add a new dependency without asking first
 - NEVER change the package structure
 - NEVER use var for simple primitives (int, String)
-- NEVER add obvious comments — only comment non-obvious or complex logic
 - NEVER hardcode URLs, secrets, or config values — use application.yml + @Value
 - NEVER create a god-service — split by responsibility
 - NEVER use if/else on PaymentMethod enum — use Strategy pattern
 - NEVER scatter status transition checks — use OrderState sealed interface
 - NEVER NOT SHOW FIELDS NOT NESSECARY COLUMN
+- NEVER COMMENT CODE

@@ -7,11 +7,15 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "product_variants", indexes = {
-    @Index(name = "idx_pvariant_product_id", columnList = "product_id"),
-    @Index(name = "idx_pvariant_is_active",  columnList = "is_active"),
-    @Index(name = "idx_pvariant_sku",        columnList = "sku")
+        @Index(name = "idx_pvariant_product_id", columnList = "product_id"),
+        @Index(name = "idx_pvariant_is_active", columnList = "is_active"),
+        @Index(name = "idx_pvariant_sku", columnList = "sku")
 })
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProductVariant extends BaseEntity {
 
     @Id
@@ -42,7 +46,9 @@ public class ProductVariant extends BaseEntity {
 
     @PrePersist
     protected void onCreate() {
-        if (stock == null) stock = 0;
-        if (isActive == null) isActive = true;
+        if (stock == null)
+            stock = 0;
+        if (isActive == null)
+            isActive = true;
     }
 }

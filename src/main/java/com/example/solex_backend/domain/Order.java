@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -57,8 +58,12 @@ public class Order extends BaseEntity {
     @Column(columnDefinition = "text")
     private String note;
 
+    @Column(name = "rate")
+    private Boolean rate;
+
+    @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items;
+    private List<OrderItem> items = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

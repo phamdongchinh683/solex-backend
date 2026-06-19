@@ -1,5 +1,6 @@
 package com.example.solex_backend.service;
 
+import com.example.solex_backend.domain.Order;
 import com.example.solex_backend.domain.Rating;
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
@@ -7,6 +8,7 @@ import com.example.solex_backend.dto.request.CreateRatingRequest;
 import com.example.solex_backend.dto.response.RatingResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
+import com.example.solex_backend.repository.OrderRepository;
 import com.example.solex_backend.repository.RatingRepository;
 import com.example.solex_backend.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +25,22 @@ public class RatingService {
 
     private final RatingRepository ratingRepository;
     private final RestaurantRepository restaurantRepository;
+    private final OrderRepository orderRepository;
 
-    public RatingResponse rateRestaurant(Long id, User user, CreateRatingRequest request) {
+    public RatingResponse rateRestaurant(Long restaurantId, User user, CreateRatingRequest request) {
+        Order order = orderRepository.findByIdAndUser(request.orderId(), user)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + request.orderId()));
+
+        if (!"DELIVERED".equals(order.getStatus())) {
+            throw new BusinessException("Order must be DELIVERED before rating");
+        }
+        if (Boolean.TRUE.equals(order.getRate())) {
+            throw new BusinessException("This order has already been rated");
+        }
+
         int newRating = validateRating(request.rating());
-        Restaurant restaurant = restaurantRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + id));
+        Restaurant restaurant = restaurantRepository.findByIdForUpdate(restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
         Rating rating = ratingRepository.findByRestaurantAndUser(restaurant, user)
                 .orElse(null);
@@ -52,6 +65,7 @@ public class RatingService {
 
         restaurantRepository.save(restaurant);
         Rating savedRating = ratingRepository.save(rating);
+        orderRepository.markRated(order.getId());
         return toResponse(savedRating);
     }
 

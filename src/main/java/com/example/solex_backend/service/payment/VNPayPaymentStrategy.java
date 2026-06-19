@@ -30,7 +30,6 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
     public PaymentInitResult initiate(Order order, Payment payment, String clientIp) {
         LocalDateTime now = LocalDateTime.now();
 
-        // VNPay requires amount * 100 (they store in smallest unit without decimal separator)
         long vnpAmount = order.getTotalAmount().multiply(BigDecimal.valueOf(100)).longValueExact();
 
         Map<String, String> params = new TreeMap<>();

@@ -42,6 +42,19 @@ public class CartService {
         ProductVariant variant = productVariantRepository.findById(request.productVariantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + request.productVariantId()));
 
+        List<CartItem> existingItems = cartItemRepository.findByCart(cart);
+        if (!existingItems.isEmpty()) {
+            Long existingRestaurantId = existingItems.get(0).getVariant().getProduct().getRestaurant().getId();
+            Long incomingRestaurantId = variant.getProduct().getRestaurant().getId();
+            if (!existingRestaurantId.equals(incomingRestaurantId)) {
+                String existingRestaurantName = existingItems.get(0).getVariant().getProduct().getRestaurant().getName();
+                throw new BusinessException(
+                        "Your cart already has items from \"" + existingRestaurantName + "\". " +
+                        "Please clear your cart before adding items from a different restaurant."
+                );
+            }
+        }
+
         cartItemRepository.upsertQuantity(cart.getId(), variant.getId(), request.quantity(), variant.getPrice());
 
         CartItem item = cartItemRepository.findByCartAndVariant(cart, variant)

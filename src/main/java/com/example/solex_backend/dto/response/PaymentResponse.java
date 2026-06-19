@@ -11,6 +11,7 @@ public record PaymentResponse(
         @Schema(description = "Payment method: STRIPE / VNPAY / COD") String method,
         @Schema(description = "Payment status: PENDING / SUCCESS / FAILED / REFUNDED") String status,
         @Schema(description = "Amount") BigDecimal amount,
+        @Schema(description = "Admin commission (20% of total, STRIPE only)") BigDecimal commissionAmount,
         @Schema(description = "Transaction reference") String transactionRef,
         @Schema(description = "Timestamp when payment was confirmed") LocalDateTime paidAt,
         @Schema(description = "Timestamp when payment record was created") LocalDateTime createdAt
