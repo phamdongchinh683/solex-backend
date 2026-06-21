@@ -48,29 +48,28 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/api/v1/customer/sign-up",
-                    "/api/v1/operator/sign-up",
-                    "/health",
-                    "/api/v1/auth/sign-in",
-                    "/api/v1/auth/otp/send",
-                    "/api/v1/auth/contact/check",
-                    "/api/v1/auth/otp/verify",
-                    "/api/v1/payments/stripe/webhook",
-                    "/api/v1/payments/vnpay/ipn",
-                    "/api/v1/payments/vnpay/return",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/api-docs/**",
-                    "/v3/api-docs/**"
-                ).permitAll()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/customer/sign-up",
+                                "/api/v1/operator/sign-up",
+                                "/health",
+                                "/api/v1/auth/sign-in",
+                                "/api/v1/auth/otp/send",
+                                "/api/v1/auth/contact/check",
+                                "/api/v1/auth/otp/verify",
+                                "/api/v1/payments/stripe/webhook",
+                                "/api/v1/payments/vnpay/ipn",
+                                "/api/v1/payments/vnpay/return",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/api-docs/**",
+                                "/v3/api-docs/**")
+                        .permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -79,35 +78,42 @@ public class SecurityConfig {
     public OncePerRequestFilter jwtAuthenticationFilter() {
         return new OncePerRequestFilter() {
             @Override
-            protected void doFilterInternal(HttpServletRequest request,
-                                            HttpServletResponse response,
-                                            FilterChain filterChain)
+            protected void doFilterInternal(
+                    HttpServletRequest request,
+                    HttpServletResponse response,
+                    FilterChain filterChain)
                     throws ServletException, IOException {
+
                 String authHeader = request.getHeader("Authorization");
 
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
+
                     String token = authHeader.substring(7);
+
                     if (jwtUtil.isTokenValid(token)) {
+
                         Long userId = jwtUtil.extractUserId(token);
                         String role = jwtUtil.extractRole(token);
                         int tokenVersion = jwtUtil.extractTokenVersion(token);
 
-                        boolean tokenValid = userRepository.findById(userId)
-                                .map(user -> user.getTokenVersion() == tokenVersion
-                                        && Integer.valueOf(1).equals(user.getIsActive()))
-                                .orElse(false);
+                        var user = userRepository.findById(userId).orElse(null);
 
-                        if (tokenValid) {
-                            var user = userRepository.findById(userId).orElse(null);
-                            if (user != null) {
-                                UsernamePasswordAuthenticationToken authentication =
-                                        new UsernamePasswordAuthenticationToken(
-                                                user, null,
-                                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                                        );
-                                authentication.setDetails(token);
-                                SecurityContextHolder.getContext().setAuthentication(authentication);
-                            }
+                        if (user != null
+                                && user.getTokenVersion() == tokenVersion
+                                && Integer.valueOf(1).equals(user.getIsActive())) {
+
+                            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                    user,
+                                    null,
+                                    List.of(
+                                            new SimpleGrantedAuthority(
+                                                    "ROLE_" + role)));
+
+                            authentication.setDetails(token);
+
+                            SecurityContextHolder
+                                    .getContext()
+                                    .setAuthentication(authentication);
                         }
                     }
                 }

@@ -135,6 +135,6 @@ public class RestaurantService {
         public void updateIsOpenRestaurant(Long id, User operator, boolean status) {
                 int rows = restaurantRepository.updateStatusByOperator(id, operator.getId(), status);
                 if (rows == 0)
-                        throw new ResourceNotFoundException("Restaurant not found for this operator");
+                        throw new ResourceNotFoundException("Not change");
         }
 }
