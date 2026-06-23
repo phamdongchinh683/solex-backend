@@ -42,14 +42,12 @@ public class CustomerController {
     private final CouponService couponService;
     private final StripeCardService stripeCardService;
 
-
     @Operation(summary = "Register a new customer account")
     @PreAuthorize("permitAll()")
     @PostMapping("/sign-up")
     public ApiResponse<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         return ApiResponse.ok("OK", authService.signup(request));
     }
-
 
     @Operation(summary = "Get current user profile")
     @GetMapping("/profile")
@@ -64,7 +62,6 @@ public class CustomerController {
             @RequestBody UpdateProfileRequest request) {
         return ApiResponse.ok("Profile updated", customerService.updateProfile(user, request));
     }
-
 
     @Operation(summary = "Get my addresses")
     @GetMapping("/addresses")
@@ -106,41 +103,49 @@ public class CustomerController {
         return ApiResponse.ok("Default address set", addressService.setDefaultAddress(id, user));
     }
 
-
     @Operation(summary = "List open restaurants")
     @GetMapping("/restaurants")
-    public ApiResponse<List<RestaurantResponse>> getAllRestaurants(
-            @Parameter(description = "Search by restaurant name")
-            @RequestParam(required = false) String name) {
-        return ApiResponse.ok("OK", restaurantService.getAllRestaurants(name));
+    public ApiResponse<SliceResponse<RestaurantResponse>> getAllRestaurants(
+            @Parameter(description = "Search by restaurant name") @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "0") Long cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok("OK", restaurantService.getAllRestaurants(name, cursor, size));
     }
 
     @Operation(summary = "List categories in a restaurant")
-    @GetMapping("/restaurants/{restaurantId}/categories")
-    public ApiResponse<List<CategoryResponse>> getCategories(@PathVariable Long restaurantId) {
-        return ApiResponse.ok("OK", restaurantService.getCategoriesForRestaurant(restaurantId));
+    @GetMapping("/restaurants/{id}/categories")
+    public ApiResponse<List<CategoryResponse>> getCategories(@PathVariable Long id) {
+        return ApiResponse.ok("OK", restaurantService.getCategoriesForRestaurant(id));
     }
 
     @Operation(summary = "Get restaurant menu with optional filters")
     @GetMapping("/restaurants/{restaurantId}/menu")
-    public ApiResponse<List<ProductResponse>> getMenu(
+    public ApiResponse<SliceResponse<ProductResponse>> getMenu(
             @PathVariable Long restaurantId,
             @Parameter(description = "Filter by category") @RequestParam(required = false) Long categoryId,
-            @Parameter(description = "Search by name")    @RequestParam(required = false) String search) {
-        return ApiResponse.ok("OK", restaurantService.getMenuByRestaurantId(restaurantId, categoryId, search));
+            @Parameter(description = "Search by name") @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") Long cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok("OK",
+                restaurantService.getMenuByRestaurantId(restaurantId, categoryId, search, cursor, size));
     }
-
 
     @Operation(summary = "Get active coupons for a restaurant")
     @GetMapping("/restaurants/{restaurantId}/coupons")
-    public ApiResponse<List<CouponResponse>> getRestaurantCoupons(@PathVariable Long restaurantId) {
-        return ApiResponse.ok("OK", couponService.getActiveCouponsForRestaurant(restaurantId));
+    public ApiResponse<SliceResponse<CouponResponse>> getRestaurantCoupons(
+            @PathVariable Long restaurantId,
+            @RequestParam(defaultValue = "0") Long cursor,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", couponService.getActiveCouponsForRestaurant(restaurantId, cursor, size));
     }
 
     @Operation(summary = "Get restaurant ratings")
     @GetMapping("/restaurants/{restaurantId}/ratings")
-    public ApiResponse<List<RatingResponse>> getRestaurantRatings(@PathVariable Long restaurantId) {
-        return ApiResponse.ok("OK", ratingService.getRestaurantRatings(restaurantId));
+    public ApiResponse<SliceResponse<RatingResponse>> getRestaurantRatings(
+            @PathVariable Long restaurantId,
+            @RequestParam(defaultValue = "9223372036854775807") Long cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok("OK", ratingService.getRestaurantRatings(restaurantId, cursor, size));
     }
 
     @Operation(summary = "Create or update my restaurant rating")
@@ -152,7 +157,6 @@ public class CustomerController {
         return ApiResponse.ok("OK", ratingService.rateRestaurant(restaurantId, user, request));
     }
 
-
     @Operation(summary = "Get product detail by ID")
     @GetMapping("/products/{id}")
     public ApiResponse<ProductResponse> getProduct(@PathVariable Long id) {
@@ -161,8 +165,11 @@ public class CustomerController {
 
     @Operation(summary = "List all variants of a product")
     @GetMapping("/products/{id}/variants")
-    public ApiResponse<List<ProductVariantResponse>> getVariants(@PathVariable Long id) {
-        return ApiResponse.ok("OK", productVariantService.getVariantsByProduct(id));
+    public ApiResponse<SliceResponse<ProductVariantResponse>> getVariants(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") Long cursor,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", productVariantService.getVariantsByProduct(id, cursor, size));
     }
 
     @Operation(summary = "Get a single product variant")
@@ -172,7 +179,6 @@ public class CustomerController {
             @PathVariable Long variantId) {
         return ApiResponse.ok("OK", productVariantService.getVariantById(id, variantId));
     }
-
 
     @Operation(summary = "Create Stripe SetupIntent — use returned clientSecret with Stripe.js to save a card")
     @PostMapping("/cards/setup")
@@ -239,7 +245,6 @@ public class CustomerController {
         return ApiResponse.ok("OK", null);
     }
 
-
     @Operation(summary = "Create order from cart")
     @PostMapping("/orders")
     public ApiResponse<OrderResponse> createOrder(
@@ -250,8 +255,11 @@ public class CustomerController {
 
     @Operation(summary = "Get my orders")
     @GetMapping("/orders")
-    public ApiResponse<List<OrderResponse>> getMyOrders(@AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", orderService.getMyOrders(user));
+    public ApiResponse<SliceResponse<OrderResponse>> getMyOrders(
+            @AuthenticationPrincipal User user,
+            @RequestParam(defaultValue = "9223372036854775807") Long cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok("OK", orderService.getMyOrders(user, cursor, size));
     }
 
     @Operation(summary = "Get order detail")
@@ -269,6 +277,7 @@ public class CustomerController {
             @RequestParam double restaurantLng,
             @RequestParam double userLat,
             @RequestParam double userLng) {
-        return ApiResponse.ok("OK", shippingService.calculateShippingFee(restaurantLat, restaurantLng, userLat, userLng));
+        return ApiResponse.ok("OK",
+                shippingService.calculateShippingFee(restaurantLat, restaurantLng, userLat, userLng));
     }
 }

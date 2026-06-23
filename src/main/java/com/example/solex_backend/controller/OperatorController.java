@@ -16,8 +16,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @Tag(name = "Operator", description = "Operator management endpoints")
 @RestController
 @RequestMapping("/api/v1/operator")
@@ -99,8 +97,11 @@ public class OperatorController {
 
     @Operation(summary = "Get all coupons for my restaurant")
     @GetMapping("/coupons")
-    public ApiResponse<List<CouponResponse>> getCoupons(@AuthenticationPrincipal User operator) {
-        return ApiResponse.ok("OK", couponService.getOperatorCoupons(operator));
+    public ApiResponse<SliceResponse<CouponResponse>> getCoupons(
+            @AuthenticationPrincipal User operator,
+            @RequestParam(defaultValue = "0") Long cursor,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", couponService.getOperatorCoupons(operator, cursor, size));
     }
 
     @Operation(summary = "Create a coupon for my restaurant")
@@ -142,10 +143,13 @@ public class OperatorController {
 
     // ── Products ──────────────────────────────────────────────────────────────
 
+    // Rule 1: operator now passed to enforce restaurant ownership on create
     @Operation(summary = "Create product")
     @PostMapping("/products")
-    public ApiResponse<ProductResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
-        return ApiResponse.ok("OK", productService.createProduct(request));
+    public ApiResponse<ProductResponse> createProduct(
+            @AuthenticationPrincipal User operator,
+            @Valid @RequestBody CreateProductRequest request) {
+        return ApiResponse.ok("OK", productService.createProduct(operator, request));
     }
 
     @Operation(summary = "Get product detail by ID")
@@ -166,8 +170,11 @@ public class OperatorController {
 
     @Operation(summary = "List all variants of a product")
     @GetMapping("/products/{id}/variants")
-    public ApiResponse<List<ProductVariantResponse>> getVariants(@PathVariable Long id) {
-        return ApiResponse.ok("OK", productVariantService.getVariantsByProduct(id));
+    public ApiResponse<SliceResponse<ProductVariantResponse>> getVariants(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") Long cursor,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", productVariantService.getVariantsByProduct(id, cursor, size));
     }
 
     @Operation(summary = "Get a single product variant")

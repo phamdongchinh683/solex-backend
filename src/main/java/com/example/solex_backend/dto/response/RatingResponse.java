@@ -10,7 +10,6 @@ public record RatingResponse(
         @Schema(description = "User ID") Long userId,
         @Schema(description = "Restaurant rating from 1 to 5") Integer rating,
         @Schema(description = "Rating comment") String comment,
-        @Schema(description = "Created at") LocalDateTime createdAt,
-        @Schema(description = "Updated at") LocalDateTime updatedAt
+        @Schema(description = "Created at") LocalDateTime createdAt
 ) {
 }

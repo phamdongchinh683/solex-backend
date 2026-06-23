@@ -3,8 +3,8 @@ package com.example.solex_backend.service;
 import com.example.solex_backend.domain.Category;
 import com.example.solex_backend.domain.Product;
 import com.example.solex_backend.domain.ProductImage;
-import com.example.solex_backend.domain.ProductVariant;
 import com.example.solex_backend.domain.Restaurant;
+import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateProductRequest;
 import com.example.solex_backend.dto.response.ProductResponse;
 import com.example.solex_backend.dto.response.ProductVariantResponse;
@@ -33,16 +33,20 @@ public class ProductService {
     private final ProductVariantRepository productVariantRepository;
     private final RestaurantRepository restaurantRepository;
 
-    public ProductResponse createProduct(CreateProductRequest request) {
-        Restaurant restaurant = restaurantRepository.findById(request.restaurantId())
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + request.restaurantId()));
+    // Rule 1: existsByIdAndOperator adds missing operator-ownership check on restaurantId
+    // Rule 2: getReferenceById replaces findById used only for FK assignment;
+    //         existsByIdAndRestaurant_Id replaces findById on category to avoid lazy-loading restaurant
+    public ProductResponse createProduct(User operator, CreateProductRequest request) {
+        if (!restaurantRepository.existsByIdAndOperator(request.restaurantId(), operator)) {
+            throw new ResourceNotFoundException("Restaurant not found: " + request.restaurantId());
+        }
 
-        Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + request.categoryId()));
-
-        if (!category.getRestaurant().getId().equals(restaurant.getId())) {
+        if (!categoryRepository.existsByIdAndRestaurant_Id(request.categoryId(), request.restaurantId())) {
             throw new BusinessException("Category does not belong to this restaurant");
         }
+
+        Restaurant restaurant = restaurantRepository.getReferenceById(request.restaurantId());
+        Category category = categoryRepository.getReferenceById(request.categoryId());
 
         Product product = Product.builder()
                 .name(request.name())
@@ -80,8 +84,7 @@ public class ProductService {
                 .map(ProductImage::getUrl)
                 .collect(Collectors.toList());
 
-        List<ProductVariantResponse> variants = productVariantRepository.findByProduct(p).stream()
-                .filter(v -> Boolean.TRUE.equals(v.getIsActive()))
+        List<ProductVariantResponse> variants = productVariantRepository.findByProductAndIsActive(p, true).stream()
                 .map(v -> new ProductVariantResponse(
                         v.getId(), v.getSku(), v.getSize(),
                         v.getPrice(), v.getStock(), v.getImageUrl(), v.getIsActive()

@@ -2,6 +2,7 @@ package com.example.solex_backend.repository;
 
 import com.example.solex_backend.domain.Order;
 import com.example.solex_backend.domain.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,8 +12,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByUser(User user);
-
+    @Query("SELECT o FROM Order o WHERE o.user = :user AND o.id < :cursor ORDER BY o.id DESC")
+    List<Order> findByUserBeforeCursor(@Param("user") User user, @Param("cursor") Long cursor, Pageable pageable);
     Optional<Order> findByIdAndUser(Long id, User user);
 
     @Modifying

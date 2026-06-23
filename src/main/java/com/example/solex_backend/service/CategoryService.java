@@ -5,11 +5,15 @@ import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateCategoryRequest;
 import com.example.solex_backend.dto.response.CategoryResponse;
+import com.example.solex_backend.dto.response.CategorySummary;
+import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.CategoryRepository;
 import com.example.solex_backend.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,18 +43,7 @@ public class CategoryService {
 
         return toResponse(categoryRepository.save(category));
     }
-
-    @Transactional(readOnly = true)
-    public List<CategoryResponse> getCategoriesByRestaurant(Long restaurantId) {
-        Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
-
-        return categoryRepository.findByRestaurantOrderByName(restaurant).stream()
-                .filter(c -> Integer.valueOf(1).equals(c.getIsActive()))
-                .map(this::toResponse)
-                .toList();
-    }
-
+    
     private CategoryResponse toResponse(Category c) {
         return new CategoryResponse(c.getId(), c.getName(), c.getImageUrl());
     }

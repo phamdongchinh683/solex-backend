@@ -4,7 +4,6 @@ import com.example.solex_backend.domain.Address;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateAddressRequest;
 import com.example.solex_backend.dto.response.AddressResponse;
-import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.AddressRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,13 +44,10 @@ public class AddressService {
         return toResponse(address);
     }
 
+    // Rule 1: findByIdAndUser replaces findById + manual ownership comparison
     public AddressResponse updateAddress(Long id, User user, CreateAddressRequest request) {
-        Address address = addressRepository.findById(id)
+        Address address = addressRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + id));
-
-        if (!address.getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to edit this address");
-        }
 
         address.setFirstName(request.firstName());
         address.setLastName(request.lastName());
@@ -59,31 +55,27 @@ public class AddressService {
         address.setAddressDetail(request.addressDetail());
         address.setLongitude(request.longitude());
         address.setLatitude(request.latitude());
-
         addressRepository.save(address);
         return toResponse(address);
     }
 
+    // Rule 1: existsByIdAndUser adds the previously missing ownership check before delete
     public void deleteAddress(Long id, User user) {
-        Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + id));
-        addressRepository.delete(address);
+        if (!addressRepository.existsByIdAndUser(id, user)) {
+            throw new ResourceNotFoundException("Address not found: " + id);
+        }
+        addressRepository.deleteById(id);
     }
 
+    // Rule 1: findByIdAndUser replaces findById + manual check
+    // Rule 3: bulk @Modifying queries replace per-row load → set → save loop
     public AddressResponse setDefaultAddress(Long id, User user) {
-        Address address = addressRepository.findById(id)
+        Address address = addressRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + id));
 
-        if (!address.getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to change this address");
-        }
-
-        List<Address> allAddresses = addressRepository.findByUser(user);
-        for (Address a : allAddresses) {
-            a.setIsDefault(a.getId().equals(id));
-            addressRepository.save(a);
-        }
-
+        addressRepository.clearDefaultByUserId(user.getId());
+        addressRepository.setDefaultByIdAndUserId(id, user.getId());
+        address.setIsDefault(true);
         return toResponse(address);
     }
 

@@ -6,17 +6,18 @@ import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateRatingRequest;
 import com.example.solex_backend.dto.response.RatingResponse;
+import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.OrderRepository;
 import com.example.solex_backend.repository.RatingRepository;
 import com.example.solex_backend.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,13 +71,13 @@ public class RatingService {
     }
 
     @Transactional(readOnly = true)
-    public List<RatingResponse> getRestaurantRatings(Long restaurantId) {
-        Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
-
-        return ratingRepository.findByRestaurantOrderByCreatedAtDesc(restaurant).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public SliceResponse<RatingResponse> getRestaurantRatings(Long restaurantId, Long cursor, int size) {
+        List<Rating> result = ratingRepository.findByRestaurantBeforeCursor(restaurantId, cursor,
+                PageRequest.of(0, size + 1));
+        boolean hasNext = result.size() > size;
+        List<Rating> page = hasNext ? result.subList(0, size) : result;
+        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+        return new SliceResponse<>(page.stream().map(this::toResponse).toList(), nextCursor);
     }
 
     private int validateRating(Integer rating) {
@@ -116,8 +117,6 @@ public class RatingService {
                 rating.getUser().getId(),
                 rating.getRating(),
                 rating.getComment(),
-                rating.getCreatedAt(),
-                rating.getUpdatedAt()
-        );
+                rating.getCreatedAt());
     }
 }

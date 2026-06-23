@@ -6,6 +6,7 @@ import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateCouponRequest;
 import com.example.solex_backend.dto.response.CouponResponse;
+import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.CouponRepository;
@@ -13,6 +14,7 @@ import com.example.solex_backend.repository.OrderRepository;
 import com.example.solex_backend.repository.RestaurantRepository;
 import com.example.solex_backend.util.Enums.CouponDiscountType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,19 +33,27 @@ public class CouponService {
     private final RestaurantRepository restaurantRepository;
 
     @Transactional(readOnly = true)
-    public List<CouponResponse> getActiveCouponsForRestaurant(Long restaurantId) {
-        Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
-        return couponRepository.findActiveByRestaurant(restaurant, LocalDateTime.now())
-                .stream().map(this::toResponse).toList();
+    public SliceResponse<CouponResponse> getActiveCouponsForRestaurant(Long restaurantId, Long cursor, int size) {
+        if (!restaurantRepository.existsById(restaurantId)) {
+            throw new ResourceNotFoundException("Restaurant not found: " + restaurantId);
+        }
+        Restaurant restaurant = restaurantRepository.getReferenceById(restaurantId);
+        List<Coupon> result = couponRepository.findActiveByRestaurantAfterCursor(restaurant, LocalDateTime.now(), cursor, PageRequest.of(0, size + 1));
+        boolean hasNext = result.size() > size;
+        List<Coupon> page = hasNext ? result.subList(0, size) : result;
+        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+        return new SliceResponse<>(page.stream().map(this::toResponse).toList(), nextCursor);
     }
 
     @Transactional(readOnly = true)
-    public List<CouponResponse> getOperatorCoupons(User operator) {
+    public SliceResponse<CouponResponse> getOperatorCoupons(User operator, Long cursor, int size) {
         Restaurant restaurant = restaurantRepository.findByOperator(operator)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
-        return couponRepository.findByRestaurant(restaurant)
-                .stream().map(this::toResponse).toList();
+        List<Coupon> result = couponRepository.findByRestaurantAfterCursor(restaurant, cursor, PageRequest.of(0, size + 1));
+        boolean hasNext = result.size() > size;
+        List<Coupon> page = hasNext ? result.subList(0, size) : result;
+        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+        return new SliceResponse<>(page.stream().map(this::toResponse).toList(), nextCursor);
     }
 
     public CouponResponse createCoupon(User operator, CreateCouponRequest request) {
@@ -91,11 +101,6 @@ public class CouponService {
         );
     }
 
-    /**
-     * Validates the coupon and applies the discount to the order.
-     * Updates order.discountAmount, order.totalAmount, order.coupon,
-     * and increments coupon.usageCount. Saves both entities.
-     */
     public void applyToOrder(Long couponId, Order order) {
         Coupon coupon = couponRepository.findById(couponId)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon not found: " + couponId));

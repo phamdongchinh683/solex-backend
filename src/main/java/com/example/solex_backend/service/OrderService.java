@@ -4,10 +4,12 @@ import com.example.solex_backend.domain.*;
 import com.example.solex_backend.dto.request.CreateOrderRequest;
 import com.example.solex_backend.dto.response.OrderItemResponse;
 import com.example.solex_backend.dto.response.OrderResponse;
+import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,11 +38,9 @@ public class OrderService {
             throw new BusinessException("Cart is empty");
         }
 
-        Address address = addressRepository.findById(request.addressId())
+        // Rule 1: findByIdAndUser replaces findById + manual ownership comparison
+        Address address = addressRepository.findByIdAndUser(request.addressId(), user)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + request.addressId()));
-        if (!address.getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to use this address");
-        }
 
         BigDecimal subtotal = cartItems.stream()
                 .map(item -> item.getVariant().getPrice().multiply(new BigDecimal(item.getQuantity())))
@@ -69,17 +69,17 @@ public class OrderService {
         orderRepository.save(order);
 
         for (CartItem cartItem : cartItems) {
-                    BigDecimal unitPrice = cartItem.getVariant().getPrice();
-                    int qty = cartItem.getQuantity();
-                    OrderItem orderItem = OrderItem.builder()
-                            .order(order)
-                            .productName(cartItem.getVariant().getProduct().getName())
-                            .variant(cartItem.getVariant())
-                            .sku(cartItem.getVariant().getSku())
-                            .quantity(qty)
-                            .unitPrice(unitPrice)
-                            .subtotal(unitPrice.multiply(BigDecimal.valueOf(qty)))
-                            .build();
+            BigDecimal unitPrice = cartItem.getVariant().getPrice();
+            int qty = cartItem.getQuantity();
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .productName(cartItem.getVariant().getProduct().getName())
+                    .variant(cartItem.getVariant())
+                    .sku(cartItem.getVariant().getSku())
+                    .quantity(qty)
+                    .unitPrice(unitPrice)
+                    .subtotal(unitPrice.multiply(BigDecimal.valueOf(qty)))
+                    .build();
             order.getItems().add(orderItem);
         }
 
@@ -92,18 +92,18 @@ public class OrderService {
         return toOrderResponse(order);
     }
 
-    public List<OrderResponse> getMyOrders(User user) {
-        return orderRepository.findByUser(user).stream()
-                .map(this::toOrderResponse)
-                .collect(Collectors.toList());
+    public SliceResponse<OrderResponse> getMyOrders(User user, Long cursor, int size) {
+        List<Order> result = orderRepository.findByUserBeforeCursor(user, cursor, PageRequest.of(0, size + 1));
+        boolean hasNext = result.size() > size;
+        List<Order> page = hasNext ? result.subList(0, size) : result;
+        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+        return new SliceResponse<>(page.stream().map(this::toOrderResponse).toList(), nextCursor);
     }
 
+    // Rule 1: findByIdAndUser (already in repo) replaces findById + manual ownership comparison
     public OrderResponse getOrderById(Long id, User user) {
-        Order order = orderRepository.findById(id)
+        Order order = orderRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
-        if (!order.getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to view this order");
-        }
         return toOrderResponse(order);
     }
 
@@ -119,18 +119,14 @@ public class OrderService {
 
     private OrderResponse toOrderResponse(Order order) {
         List<OrderItemResponse> items = order.getItems().stream()
-                .map(item -> {
-                    String productName = item.getProductName();
-                    String sku = item.getSku();
-                    return new OrderItemResponse(
-                            item.getId(),
-                            productName,
-                            sku,
-                            item.getQuantity(),
-                            item.getUnitPrice(),
-                            item.getUnitPrice().multiply(new BigDecimal(item.getQuantity()))
-                    );
-                })
+                .map(item -> new OrderItemResponse(
+                        item.getId(),
+                        item.getProductName(),
+                        item.getSku(),
+                        item.getQuantity(),
+                        item.getUnitPrice(),
+                        item.getUnitPrice().multiply(new BigDecimal(item.getQuantity()))
+                ))
                 .collect(Collectors.toList());
 
         return new OrderResponse(

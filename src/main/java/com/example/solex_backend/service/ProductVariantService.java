@@ -5,16 +5,17 @@ import com.example.solex_backend.domain.ProductVariant;
 import com.example.solex_backend.dto.request.CreateProductVariantRequest;
 import com.example.solex_backend.dto.request.UpdateProductVariantRequest;
 import com.example.solex_backend.dto.response.ProductVariantResponse;
+import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.ProductRepository;
 import com.example.solex_backend.repository.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,13 +25,17 @@ public class ProductVariantService {
     private final ProductVariantRepository productVariantRepository;
     private final ProductRepository productRepository;
 
+    // Rule 2: getReferenceById replaces findById used only for FK assignment
     public ProductVariantResponse createVariant(Long productId, CreateProductVariantRequest request) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Product not found: " + productId);
+        }
 
-        if (productVariantRepository.findBySku(request.sku()).isPresent()) {
+        if (productVariantRepository.existsBySku(request.sku())) {
             throw new BusinessException("SKU already exists: " + request.sku());
         }
+
+        Product product = productRepository.getReferenceById(productId);
 
         ProductVariant variant = ProductVariant.builder()
                 .product(product)
@@ -47,42 +52,29 @@ public class ProductVariantService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductVariantResponse> getVariantsByProduct(Long productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
-
-        return productVariantRepository.findByProduct(product).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public ProductVariantResponse getVariantById(Long productId, Long variantId) {
+    public SliceResponse<ProductVariantResponse> getVariantsByProduct(Long productId, Long cursor, int size) {
         if (!productRepository.existsById(productId)) {
             throw new ResourceNotFoundException("Product not found: " + productId);
         }
+        List<ProductVariant> result = productVariantRepository.findByProductAfterCursor(productId, cursor, PageRequest.of(0, size + 1));
+        boolean hasNext = result.size() > size;
+        List<ProductVariant> page = hasNext ? result.subList(0, size) : result;
+        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+        return new SliceResponse<>(page.stream().map(this::toResponse).toList(), nextCursor);
+    }
 
-        ProductVariant variant = productVariantRepository.findById(variantId)
+    // Rule 1: findByIdAndProduct_Id combines existence + ownership check in one query
+    @Transactional(readOnly = true)
+    public ProductVariantResponse getVariantById(Long productId, Long variantId) {
+        ProductVariant variant = productVariantRepository.findByIdAndProduct_Id(variantId, productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantId));
-
-        if (!variant.getProduct().getId().equals(productId)) {
-            throw new BusinessException("Variant does not belong to product: " + productId);
-        }
-
         return toResponse(variant);
     }
 
+    // Rule 1: findByIdAndProduct_Id replaces findById + manual ID comparison
     public ProductVariantResponse updateVariant(Long productId, Long variantId, UpdateProductVariantRequest request) {
-        if (!productRepository.existsById(productId)) {
-            throw new ResourceNotFoundException("Product not found: " + productId);
-        }
-
-        ProductVariant variant = productVariantRepository.findById(variantId)
+        ProductVariant variant = productVariantRepository.findByIdAndProduct_Id(variantId, productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantId));
-
-        if (!variant.getProduct().getId().equals(productId)) {
-            throw new BusinessException("Variant does not belong to product: " + productId);
-        }
 
         if (request.size() != null)     variant.setSize(request.size());
         if (request.price() != null)    variant.setPrice(request.price());
@@ -90,22 +82,17 @@ public class ProductVariantService {
         if (request.imageUrl() != null) variant.setImageUrl(request.imageUrl());
         if (request.isActive() != null) variant.setIsActive(request.isActive());
 
+        productVariantRepository.save(variant);
         return toResponse(variant);
     }
 
+    // Rule 1: existsByIdAndProduct_Id replaces findById + manual ID comparison
+    // Rule 3: deactivateById @Modifying UPDATE replaces load → setIsActive(false) → dirty check
     public void deleteVariant(Long productId, Long variantId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ResourceNotFoundException("Product not found: " + productId);
+        if (!productVariantRepository.existsByIdAndProduct_Id(variantId, productId)) {
+            throw new ResourceNotFoundException("Variant not found: " + variantId);
         }
-
-        ProductVariant variant = productVariantRepository.findById(variantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantId));
-
-        if (!variant.getProduct().getId().equals(productId)) {
-            throw new BusinessException("Variant does not belong to product: " + productId);
-        }
-
-        variant.setIsActive(false);
+        productVariantRepository.deactivateById(variantId);
     }
 
     private ProductVariantResponse toResponse(ProductVariant v) {

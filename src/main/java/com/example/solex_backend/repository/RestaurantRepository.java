@@ -3,6 +3,7 @@ package com.example.solex_backend.repository;
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
@@ -14,12 +15,14 @@ import java.util.Optional;
 
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     Optional<Restaurant> findByOperator(User operator);
+    boolean existsByIdAndOperator(Long id, User operator);
 
-    List<Restaurant> findByIsOpen(Boolean isOpen);
+    @Query("SELECT r FROM Restaurant r WHERE r.isOpen = true AND r.id > :cursor ORDER BY r.id ASC")
+    List<Restaurant> findOpenAfterCursor(@Param("cursor") Long cursor, Pageable pageable);
 
-    @Query(value = "SELECT * FROM restaurants WHERE is_open = true " +
-            "AND unaccent(lower(name)) LIKE '%' || unaccent(lower(:name)) || '%'", nativeQuery = true)
-    List<Restaurant> searchOpenByName(@Param("name") String name);
+    @Query(value = "SELECT * FROM restaurants WHERE is_open = true AND id > :cursor " +
+            "AND unaccent(lower(name)) LIKE '%' || unaccent(lower(:name)) || '%' ORDER BY id", nativeQuery = true)
+    List<Restaurant> searchOpenByNameAfterCursor(@Param("name") String name, @Param("cursor") Long cursor, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Restaurant r where r.id = :id")
