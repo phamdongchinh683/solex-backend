@@ -24,10 +24,10 @@ public class EsmsSmsAdapter implements SmsPort {
                 + "?ApiKey=" + esmsConfig.getApiKey()
                 + "&SecretKey=" + esmsConfig.getSecret()
                 + "&Phone=" + to
-                + "&Content=" + org.springframework.web.util.UriUtils.encode(content, java.nio.charset.StandardCharsets.UTF_8)
-                + "&Brandname=Solex"
-                + "&SmsType=2"
-                + "&IsUnicode=0";
+                + "&Content="
+                + org.springframework.web.util.UriUtils.encode(content, java.nio.charset.StandardCharsets.UTF_8)
+                + "&SmsType=8"
+                + "&IsUnicode=1";
 
         restClient.get()
                 .uri(url)
