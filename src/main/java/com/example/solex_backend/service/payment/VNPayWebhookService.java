@@ -57,7 +57,7 @@ public class VNPayWebhookService {
     @Transactional(readOnly = true)
     public Map<String, String> handleReturn(Map<String, String> params) {
         if (!vnPayStrategy.verifySignature(params)) {
-            throw new BusinessException("Invalid VNPay return signature");
+            throw new BusinessException("Chữ ký VNPay trả về không hợp lệ");
         }
         String txnRef = params.get("vnp_TxnRef");
         Payment payment = paymentService.findByTransactionRef(txnRef);

@@ -49,8 +49,8 @@ public class CartService {
             if (!existingRestaurantId.equals(incomingRestaurantId)) {
                 String existingRestaurantName = existingItems.get(0).getVariant().getProduct().getRestaurant().getName();
                 throw new BusinessException(
-                        "Your cart already has items from \"" + existingRestaurantName + "\". " +
-                        "Please clear your cart before adding items from a different restaurant."
+                        "Giỏ hàng của bạn đã có sản phẩm từ nhà hàng \"" + existingRestaurantName + "\". " +
+                        "Vui lòng xoá giỏ hàng trước khi thêm sản phẩm từ nhà hàng khác."
                 );
             }
         }
@@ -64,14 +64,14 @@ public class CartService {
 
     public CartItemResponse updateCartItem(User user, Long cartItemId, String action) {
         if (!action.equals("+") && !action.equals("-")) {
-            throw new BusinessException("Invalid action. Use '+' or '-'");
+            throw new BusinessException("Hành động không hợp lệ. Vui lòng sử dụng '+' hoặc '-'");
         }
 
         CartItem item = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
 
         if (!item.getCart().getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to update this cart item");
+            throw new BusinessException("Bạn không có quyền cập nhật sản phẩm này trong giỏ hàng");
         }
 
         int delta = action.equals("+") ? 1 : -1;
@@ -90,7 +90,7 @@ public class CartService {
         CartItem item = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
         if (!item.getCart().getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to delete this cart item");
+            throw new BusinessException("Bạn không có quyền xoá sản phẩm này trong giỏ hàng");
         }
         cartItemRepository.delete(item);
     }

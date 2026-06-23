@@ -46,13 +46,13 @@ public class CustomerController {
     @PreAuthorize("permitAll()")
     @PostMapping("/sign-up")
     public ApiResponse<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
-        return ApiResponse.ok("OK", authService.signup(request));
+        return ApiResponse.ok("Thành công", authService.signup(request));
     }
 
     @Operation(summary = "Get current user profile")
     @GetMapping("/profile")
     public ApiResponse<UserInfoResponse> getProfile(@AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", customerService.getProfile(user));
+        return ApiResponse.ok("Thành công", customerService.getProfile(user));
     }
 
     @Operation(summary = "Update user profile")
@@ -60,13 +60,13 @@ public class CustomerController {
     public ApiResponse<UserInfoResponse> updateProfile(
             @AuthenticationPrincipal User user,
             @RequestBody UpdateProfileRequest request) {
-        return ApiResponse.ok("Profile updated", customerService.updateProfile(user, request));
+        return ApiResponse.ok("Cập nhật hồ sơ thành công", customerService.updateProfile(user, request));
     }
 
     @Operation(summary = "Get my addresses")
     @GetMapping("/addresses")
     public ApiResponse<List<AddressResponse>> getMyAddresses(@AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", addressService.getMyAddresses(user));
+        return ApiResponse.ok("Thành công", addressService.getMyAddresses(user));
     }
 
     @Operation(summary = "Create new address")
@@ -74,7 +74,7 @@ public class CustomerController {
     public ApiResponse<AddressResponse> createAddress(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreateAddressRequest request) {
-        return ApiResponse.ok("Address created", addressService.createAddress(user, request));
+        return ApiResponse.ok("Địa chỉ đã được tạo", addressService.createAddress(user, request));
     }
 
     @Operation(summary = "Update address")
@@ -83,7 +83,7 @@ public class CustomerController {
             @AuthenticationPrincipal User user,
             @PathVariable Long id,
             @Valid @RequestBody CreateAddressRequest request) {
-        return ApiResponse.ok("Address updated", addressService.updateAddress(id, user, request));
+        return ApiResponse.ok("Địa chỉ đã được cập nhật", addressService.updateAddress(id, user, request));
     }
 
     @Operation(summary = "Delete address")
@@ -92,7 +92,7 @@ public class CustomerController {
             @AuthenticationPrincipal User user,
             @PathVariable Long id) {
         addressService.deleteAddress(id, user);
-        return ApiResponse.ok("Address deleted", null);
+        return ApiResponse.ok("Địa chỉ đã được xoá", null);
     }
 
     @Operation(summary = "Set default address")
@@ -100,7 +100,7 @@ public class CustomerController {
     public ApiResponse<AddressResponse> setDefaultAddress(
             @AuthenticationPrincipal User user,
             @PathVariable Long id) {
-        return ApiResponse.ok("Default address set", addressService.setDefaultAddress(id, user));
+        return ApiResponse.ok("Địa chỉ mặc định đã được thiết lập", addressService.setDefaultAddress(id, user));
     }
 
     @Operation(summary = "List open restaurants")
@@ -109,13 +109,19 @@ public class CustomerController {
             @Parameter(description = "Search by restaurant name") @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok("OK", restaurantService.getAllRestaurants(name, cursor, size));
+        return ApiResponse.ok("Thành công", restaurantService.getAllRestaurants(name, cursor, size));
+    }
+
+    @Operation(summary = "Get restaurant detail by ID")
+    @GetMapping("/restaurants/{id}")
+    public ApiResponse<RestaurantResponse> getRestaurant(@PathVariable Long id) {
+        return ApiResponse.ok("Thành công", restaurantService.getRestaurantById(id));
     }
 
     @Operation(summary = "List categories in a restaurant")
     @GetMapping("/restaurants/{id}/categories")
     public ApiResponse<List<CategoryResponse>> getCategories(@PathVariable Long id) {
-        return ApiResponse.ok("OK", restaurantService.getCategoriesForRestaurant(id));
+        return ApiResponse.ok("Thành công", restaurantService.getCategoriesForRestaurant(id));
     }
 
     @Operation(summary = "Get restaurant menu with optional filters")
@@ -126,7 +132,7 @@ public class CustomerController {
             @Parameter(description = "Search by name") @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok("OK",
+        return ApiResponse.ok("Thành công",
                 restaurantService.getMenuByRestaurantId(restaurantId, categoryId, search, cursor, size));
     }
 
@@ -136,16 +142,17 @@ public class CustomerController {
             @PathVariable Long restaurantId,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", couponService.getActiveCouponsForRestaurant(restaurantId, cursor, size));
+        return ApiResponse.ok("Thành công", couponService.getActiveCouponsForRestaurant(restaurantId, cursor, size));
     }
 
     @Operation(summary = "Get restaurant ratings")
     @GetMapping("/restaurants/{restaurantId}/ratings")
     public ApiResponse<SliceResponse<RatingResponse>> getRestaurantRatings(
             @PathVariable Long restaurantId,
+            @Parameter(description = "Filter by star (1–5)") @RequestParam(required = false) Integer star,
             @RequestParam(defaultValue = "9223372036854775807") Long cursor,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok("OK", ratingService.getRestaurantRatings(restaurantId, cursor, size));
+        return ApiResponse.ok("Thành công", ratingService.getRestaurantRatings(restaurantId, star, cursor, size));
     }
 
     @Operation(summary = "Create or update my restaurant rating")
@@ -154,42 +161,42 @@ public class CustomerController {
             @PathVariable Long restaurantId,
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreateRatingRequest request) {
-        return ApiResponse.ok("OK", ratingService.rateRestaurant(restaurantId, user, request));
+        return ApiResponse.ok("Đánh giá thành công", ratingService.rateRestaurant(restaurantId, user, request));
     }
 
     @Operation(summary = "Get product detail by ID")
     @GetMapping("/products/{id}")
     public ApiResponse<ProductResponse> getProduct(@PathVariable Long id) {
-        return ApiResponse.ok("OK", productService.getProductById(id));
+        return ApiResponse.ok("Thành công", productService.getProductById(id));
     }
 
     @Operation(summary = "List all variants of a product")
     @GetMapping("/products/{id}/variants")
-    public ApiResponse<SliceResponse<ProductVariantResponse>> getVariants(
+    public ApiResponse<SliceResponse<CustomerVariantResponse>> getVariants(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", productVariantService.getVariantsByProduct(id, cursor, size));
+        return ApiResponse.ok("Thành công", productVariantService.getCustomerVariantsByProduct(id, cursor, size));
     }
 
     @Operation(summary = "Get a single product variant")
     @GetMapping("/products/{id}/variants/{variantId}")
-    public ApiResponse<ProductVariantResponse> getVariant(
+    public ApiResponse<CustomerVariantResponse> getVariant(
             @PathVariable Long id,
             @PathVariable Long variantId) {
-        return ApiResponse.ok("OK", productVariantService.getVariantById(id, variantId));
+        return ApiResponse.ok("Thành công", productVariantService.getCustomerVariantById(id, variantId));
     }
 
     @Operation(summary = "Create Stripe SetupIntent — use returned clientSecret with Stripe.js to save a card")
     @PostMapping("/cards/setup")
     public ApiResponse<SetupIntentResponse> createSetupIntent(@AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", stripeCardService.createSetupIntent(user));
+        return ApiResponse.ok("Thành công", stripeCardService.createSetupIntent(user));
     }
 
     @Operation(summary = "List saved cards")
     @GetMapping("/cards")
     public ApiResponse<List<CardResponse>> listCards(@AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", stripeCardService.listCards(user));
+        return ApiResponse.ok("Thành công", stripeCardService.listCards(user));
     }
 
     @Operation(summary = "Set a card as default")
@@ -198,7 +205,7 @@ public class CustomerController {
             @AuthenticationPrincipal User user,
             @PathVariable String paymentMethodId) {
         stripeCardService.setDefaultCard(user, paymentMethodId);
-        return ApiResponse.ok("Default card updated", null);
+        return ApiResponse.ok("Thẻ mặc định đã được cập nhật", null);
     }
 
     @Operation(summary = "Remove a saved card")
@@ -207,13 +214,13 @@ public class CustomerController {
             @AuthenticationPrincipal User user,
             @PathVariable String paymentMethodId) {
         stripeCardService.removeCard(user, paymentMethodId);
-        return ApiResponse.ok("Card removed", null);
+        return ApiResponse.ok("Thẻ đã được xoá", null);
     }
 
     @Operation(summary = "Get current user's cart items")
     @GetMapping("/cart")
     public ApiResponse<List<CartItemResponse>> getCart(@AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", cartService.getCartItems(user));
+        return ApiResponse.ok("Thành công", cartService.getCartItems(user));
     }
 
     @Operation(summary = "Add item to cart")
@@ -221,7 +228,7 @@ public class CustomerController {
     public ApiResponse<CartItemResponse> addToCart(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody AddToCartRequest request) {
-        return ApiResponse.ok("OK", cartService.addToCart(user, request));
+        return ApiResponse.ok("Thành công", cartService.addToCart(user, request));
     }
 
     @Operation(summary = "Update cart item quantity (+/-)")
@@ -232,8 +239,8 @@ public class CustomerController {
             @Valid @RequestBody UpdateCartItemRequest request) {
         CartItemResponse response = cartService.updateCartItem(user, cartItemId, request.action());
         return response != null
-                ? ApiResponse.ok("OK", response)
-                : ApiResponse.ok("Removed", null);
+                ? ApiResponse.ok("Thành công", response)
+                : ApiResponse.ok("Đã xoá khỏi giỏ hàng", null);
     }
 
     @Operation(summary = "Remove item from cart")
@@ -242,7 +249,7 @@ public class CustomerController {
             @AuthenticationPrincipal User user,
             @PathVariable Long cartItemId) {
         cartService.deleteCartItem(user, cartItemId);
-        return ApiResponse.ok("OK", null);
+        return ApiResponse.ok("Thành công", null);
     }
 
     @Operation(summary = "Create order from cart")
@@ -250,7 +257,7 @@ public class CustomerController {
     public ApiResponse<OrderResponse> createOrder(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreateOrderRequest request) {
-        return ApiResponse.ok("OK", orderService.createOrder(user, request));
+        return ApiResponse.ok("Đặt hàng thành công", orderService.createOrder(user, request));
     }
 
     @Operation(summary = "Get my orders")
@@ -259,7 +266,7 @@ public class CustomerController {
             @AuthenticationPrincipal User user,
             @RequestParam(defaultValue = "9223372036854775807") Long cursor,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok("OK", orderService.getMyOrders(user, cursor, size));
+        return ApiResponse.ok("Thành công", orderService.getMyOrders(user, cursor, size));
     }
 
     @Operation(summary = "Get order detail")
@@ -267,7 +274,7 @@ public class CustomerController {
     public ApiResponse<OrderResponse> getOrder(
             @PathVariable Long orderId,
             @AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", orderService.getOrderById(orderId, user));
+        return ApiResponse.ok("Thành công", orderService.getOrderById(orderId, user));
     }
 
     @Operation(summary = "Calculate shipping fee")
@@ -277,7 +284,7 @@ public class CustomerController {
             @RequestParam double restaurantLng,
             @RequestParam double userLat,
             @RequestParam double userLng) {
-        return ApiResponse.ok("OK",
+        return ApiResponse.ok("Thành công",
                 shippingService.calculateShippingFee(restaurantLat, restaurantLng, userLat, userLng));
     }
 }

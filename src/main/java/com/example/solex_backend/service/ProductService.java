@@ -42,7 +42,7 @@ public class ProductService {
         }
 
         if (!categoryRepository.existsByIdAndRestaurant_Id(request.categoryId(), request.restaurantId())) {
-            throw new BusinessException("Category does not belong to this restaurant");
+            throw new BusinessException("Danh mục không thuộc về nhà hàng này");
         }
 
         Restaurant restaurant = restaurantRepository.getReferenceById(request.restaurantId());

@@ -33,10 +33,10 @@ public class RatingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + request.orderId()));
 
         if (!"DELIVERED".equals(order.getStatus())) {
-            throw new BusinessException("Order must be DELIVERED before rating");
+            throw new BusinessException("Đơn hàng phải ở trạng thái ĐÃ GIAO trước khi đánh giá");
         }
         if (Boolean.TRUE.equals(order.getRate())) {
-            throw new BusinessException("This order has already been rated");
+            throw new BusinessException("Đơn hàng này đã được đánh giá");
         }
 
         int newRating = validateRating(request.rating());
@@ -71,9 +71,13 @@ public class RatingService {
     }
 
     @Transactional(readOnly = true)
-    public SliceResponse<RatingResponse> getRestaurantRatings(Long restaurantId, Long cursor, int size) {
-        List<Rating> result = ratingRepository.findByRestaurantBeforeCursor(restaurantId, cursor,
-                PageRequest.of(0, size + 1));
+    public SliceResponse<RatingResponse> getRestaurantRatings(Long restaurantId, Integer star, Long cursor, int size) {
+        if (star != null && (star < 1 || star > 5)) {
+            throw new BusinessException("Bộ lọc sao phải từ 1 đến 5");
+        }
+        List<Rating> result = star != null
+                ? ratingRepository.findByRestaurantAndStarBeforeCursor(restaurantId, star, cursor, PageRequest.of(0, size + 1))
+                : ratingRepository.findByRestaurantBeforeCursor(restaurantId, cursor, PageRequest.of(0, size + 1));
         boolean hasNext = result.size() > size;
         List<Rating> page = hasNext ? result.subList(0, size) : result;
         Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
@@ -82,7 +86,7 @@ public class RatingService {
 
     private int validateRating(Integer rating) {
         if (rating == null || rating < 1 || rating > 5) {
-            throw new BusinessException("Rating must be between 1 and 5");
+            throw new BusinessException("Đánh giá phải từ 1 đến 5");
         }
         return rating;
     }
@@ -101,7 +105,7 @@ public class RatingService {
             case 3 -> restaurant.setStar3(nextCounterValue(restaurant.getStar3(), delta));
             case 4 -> restaurant.setStar4(nextCounterValue(restaurant.getStar4(), delta));
             case 5 -> restaurant.setStar5(nextCounterValue(restaurant.getStar5(), delta));
-            default -> throw new BusinessException("Rating must be between 1 and 5");
+            default -> throw new BusinessException("Đánh giá phải từ 1 đến 5");
         }
     }
 

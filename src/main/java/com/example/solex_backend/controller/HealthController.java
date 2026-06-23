@@ -15,6 +15,6 @@ public class HealthController {
     @Operation(summary = "Check server health status")
     @GetMapping("/health")
     public ApiResponse<String> health() {
-        return ApiResponse.ok("OK", "Server is running");
+        return ApiResponse.ok("Máy chủ đang hoạt động", "Máy chủ đang hoạt động");
     }
 }

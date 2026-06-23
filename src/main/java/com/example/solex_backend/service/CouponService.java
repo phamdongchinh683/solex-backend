@@ -61,11 +61,11 @@ public class CouponService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
 
         if (request.expiryDate().isBefore(request.startDate())) {
-            throw new BusinessException("Expiry date must be after start date");
+            throw new BusinessException("Ngày hết hạn phải sau ngày bắt đầu");
         }
 
         if (couponRepository.findByCode(request.code()).isPresent()) {
-            throw new BusinessException("Coupon code already exists: " + request.code());
+            throw new BusinessException("Mã giảm giá đã tồn tại: " + request.code());
         }
 
         Coupon coupon = Coupon.builder()
@@ -125,26 +125,26 @@ public class CouponService {
 
     private void validateCoupon(Coupon coupon, Order order) {
         if (!Boolean.TRUE.equals(coupon.getIsActive())) {
-            throw new BusinessException("Coupon is not active");
+            throw new BusinessException("Mã giảm giá không hoạt động");
         }
 
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(coupon.getStartDate()) || now.isAfter(coupon.getExpiryDate())) {
-            throw new BusinessException("Coupon is expired or not yet valid");
+            throw new BusinessException("Mã giảm giá đã hết hạn hoặc chưa có hiệu lực");
         }
 
         if (coupon.getUsageLimit() != null && coupon.getUsageCount() >= coupon.getUsageLimit()) {
-            throw new BusinessException("Coupon usage limit has been reached");
+            throw new BusinessException("Mã giảm giá đã đạt giới hạn sử dụng");
         }
 
         if (coupon.getMinOrderAmount() != null
                 && order.getSubtotal().compareTo(coupon.getMinOrderAmount()) < 0) {
             throw new BusinessException(
-                    "Order subtotal does not meet the minimum required amount of " + coupon.getMinOrderAmount());
+                    "Tổng tiền đơn hàng chưa đạt giá trị tối thiểu " + coupon.getMinOrderAmount());
         }
 
         if (order.getCoupon() != null) {
-            throw new BusinessException("A coupon has already been applied to this order");
+            throw new BusinessException("Mã giảm giá đã được áp dụng cho đơn hàng này");
         }
     }
 

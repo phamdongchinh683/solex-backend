@@ -22,7 +22,7 @@ public class StripePaymentStrategy implements PaymentStrategy {
     public PaymentInitResult initiate(Order order, Payment payment, String clientIp) {
         String stripeAccountId = order.getRestaurant().getStripeAccountId();
         if (stripeAccountId == null) {
-            throw new BusinessException("Restaurant has not connected a Stripe account. Please complete Stripe onboarding first.");
+            throw new BusinessException("Nhà hàng chưa kết nối tài khoản Stripe. Vui lòng hoàn tất đăng ký Stripe trước.");
         }
 
         String stripeCustomerId = stripeAccountService.ensureStripeCustomer(order.getUser());
@@ -46,7 +46,7 @@ public class StripePaymentStrategy implements PaymentStrategy {
             log.info("Stripe PaymentIntent created: id={}, status={}", intent.getId(), intent.getStatus());
             return new PaymentInitResult(intent.getId(), intent.getClientSecret(), null);
         } catch (StripeException e) {
-            throw new BusinessException("Failed to create Stripe payment: " + e.getMessage());
+            throw new BusinessException("Không thể tạo thanh toán Stripe: " + e.getMessage());
         }
     }
 

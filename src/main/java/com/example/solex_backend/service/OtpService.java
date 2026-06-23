@@ -55,16 +55,16 @@ public class OtpService {
     public boolean isOtpVerified(String email, String phone) {
         if (email != null && !email.isBlank()) {
             UserOtp otpRecord = userOtpRepository.findByEmail(email)
-                    .orElseThrow(() -> new BusinessException("Email OTP has not been verified"));
+                    .orElseThrow(() -> new BusinessException("OTP email chưa được xác thực"));
             if (!Boolean.TRUE.equals(otpRecord.getVerified())) {
-                throw new BusinessException("Email has not been verified via OTP");
+                throw new BusinessException("Email chưa được xác thực qua OTP");
             }
         }
         if (phone != null && !phone.isBlank()) {
             UserOtp otpRecord = userOtpRepository.findByPhone(phone)
-                    .orElseThrow(() -> new BusinessException("Phone OTP has not been verified"));
+                    .orElseThrow(() -> new BusinessException("OTP số điện thoại chưa được xác thực"));
             if (!Boolean.TRUE.equals(otpRecord.getVerified())) {
-                throw new BusinessException("Phone has not been verified via OTP");
+                throw new BusinessException("Số điện thoại chưa được xác thực qua OTP");
             }
         }
         return true;
@@ -80,17 +80,17 @@ public class OtpService {
     public void verifyOtp(VerifyOtpRequest request) {
         UserOtp userOtp = switch (request.field()) {
             case EMAIL -> userOtpRepository.findByEmail(request.value())
-                    .orElseThrow(() -> new BusinessException("OTP not found for this email"));
+                    .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho email này"));
             case PHONE -> userOtpRepository.findByPhone(request.value())
-                    .orElseThrow(() -> new BusinessException("OTP not found for this phone"));
+                    .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho số điện thoại này"));
         };
 
         if (userOtp.getExpiresAt() == null || userOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BusinessException("OTP has expired");
+            throw new BusinessException("OTP đã hết hạn");
         }
 
         if (!request.otp().equals(userOtp.getOtp())) {
-            throw new BusinessException("Invalid OTP");
+            throw new BusinessException("OTP không hợp lệ");
         }
 
         userOtp.setOtp(null);

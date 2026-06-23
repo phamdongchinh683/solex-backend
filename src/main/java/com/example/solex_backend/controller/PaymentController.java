@@ -39,7 +39,7 @@ public class PaymentController {
             @AuthenticationPrincipal User user,
             @RequestBody @Valid CreatePaymentRequest request,
             HttpServletRequest httpRequest) {
-        return ApiResponse.ok("OK", paymentService.initiatePayment(user, request, getClientIp(httpRequest)));
+        return ApiResponse.ok("Khởi tạo thanh toán thành công", paymentService.initiatePayment(user, request, getClientIp(httpRequest)));
     }
 
     @Operation(summary = "Get payment status by payment ID")
@@ -49,7 +49,7 @@ public class PaymentController {
     public ApiResponse<PaymentResponse> getPayment(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", paymentService.getPaymentById(id, user));
+        return ApiResponse.ok("Thành công", paymentService.getPaymentById(id, user));
     }
 
     @Operation(summary = "Stripe webhook — called by Stripe, no JWT required")
@@ -70,7 +70,7 @@ public class PaymentController {
     @Operation(summary = "VNPay return")
     @GetMapping("/vnpay/return")
     public ApiResponse<Map<String, String>> vnpayReturn(@RequestParam Map<String, String> params) {
-        return ApiResponse.ok("OK", vnPayWebhookService.handleReturn(params));
+        return ApiResponse.ok("Thành công", vnPayWebhookService.handleReturn(params));
     }
 
     private String getClientIp(HttpServletRequest request) {

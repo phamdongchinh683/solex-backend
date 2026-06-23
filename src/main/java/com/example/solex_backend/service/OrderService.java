@@ -35,7 +35,7 @@ public class OrderService {
 
         List<CartItem> cartItems = cartItemRepository.findByCart(cart);
         if (cartItems.isEmpty()) {
-            throw new BusinessException("Cart is empty");
+            throw new BusinessException("Giỏ hàng trống");
         }
 
         // Rule 1: findByIdAndUser replaces findById + manual ownership comparison

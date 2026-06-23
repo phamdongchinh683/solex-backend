@@ -37,18 +37,17 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + request.orderId()));
 
         if (!order.getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to pay for this order");
+            throw new BusinessException("Bạn không có quyền thanh toán cho đơn hàng này");
         }
         if (!"PENDING".equals(order.getStatus())) {
-            throw new BusinessException("Only PENDING orders can be paid");
+            throw new BusinessException("Chỉ các đơn hàng ở trạng thái CHỜ XỬ LÝ mới có thể thanh toán");
         }
 
         boolean hasPending = paymentRepository.findByOrder(order).stream()
                 .anyMatch(p -> PaymentStatus.PENDING.name().equals(p.getStatus()));
         if (hasPending) {
-            throw new BusinessException("A pending payment already exists for this order");
+            throw new BusinessException("Đã có giao dịch thanh toán đang chờ xử lý cho đơn hàng này");
         }
-
 
         String transactionRef = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
 
@@ -69,7 +68,7 @@ public class PaymentService {
         PaymentStrategy strategy = strategies.stream()
                 .filter(s -> s.supports(request.method()))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("Unsupported payment method: " + request.method()));
+                .orElseThrow(() -> new BusinessException("Phương thức thanh toán không được hỗ trợ: " + request.method()));
 
         PaymentInitResult result = strategy.initiate(order, payment, clientIp);
 
@@ -92,7 +91,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + id));
         if (!payment.getOrder().getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You are not allowed to view this payment");
+            throw new BusinessException("Bạn không có quyền xem giao dịch thanh toán này");
         }
         return toPaymentResponse(payment);
     }

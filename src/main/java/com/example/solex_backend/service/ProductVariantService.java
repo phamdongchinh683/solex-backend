@@ -4,6 +4,7 @@ import com.example.solex_backend.domain.Product;
 import com.example.solex_backend.domain.ProductVariant;
 import com.example.solex_backend.dto.request.CreateProductVariantRequest;
 import com.example.solex_backend.dto.request.UpdateProductVariantRequest;
+import com.example.solex_backend.dto.response.CustomerVariantResponse;
 import com.example.solex_backend.dto.response.ProductVariantResponse;
 import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
@@ -32,7 +33,7 @@ public class ProductVariantService {
         }
 
         if (productVariantRepository.existsBySku(request.sku())) {
-            throw new BusinessException("SKU already exists: " + request.sku());
+            throw new BusinessException("Mã SKU đã tồn tại: " + request.sku());
         }
 
         Product product = productRepository.getReferenceById(productId);
@@ -93,6 +94,29 @@ public class ProductVariantService {
             throw new ResourceNotFoundException("Variant not found: " + variantId);
         }
         productVariantRepository.deactivateById(variantId);
+    }
+
+    @Transactional(readOnly = true)
+    public SliceResponse<CustomerVariantResponse> getCustomerVariantsByProduct(Long productId, Long cursor, int size) {
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Product not found: " + productId);
+        }
+        List<ProductVariant> result = productVariantRepository.findActiveByProductAfterCursor(productId, cursor, PageRequest.of(0, size + 1));
+        boolean hasNext = result.size() > size;
+        List<ProductVariant> page = hasNext ? result.subList(0, size) : result;
+        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+        return new SliceResponse<>(page.stream().map(this::toCustomerResponse).toList(), nextCursor);
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerVariantResponse getCustomerVariantById(Long productId, Long variantId) {
+        ProductVariant variant = productVariantRepository.findByIdAndProduct_Id(variantId, productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found: " + variantId));
+        return toCustomerResponse(variant);
+    }
+
+    private CustomerVariantResponse toCustomerResponse(ProductVariant v) {
+        return new CustomerVariantResponse(v.getId(), v.getSize(), v.getPrice(), v.getImageUrl());
     }
 
     private ProductVariantResponse toResponse(ProductVariant v) {

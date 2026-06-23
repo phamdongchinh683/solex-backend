@@ -40,7 +40,7 @@ public class OperatorController {
     @PreAuthorize("permitAll()")
     @PostMapping("/sign-up")
     public ApiResponse<AuthResponse> signUp(@Valid @RequestBody OperatorSignupRequest request) {
-        return ApiResponse.ok("OK", authService.signupOperator(request));
+        return ApiResponse.ok("Thành công", authService.signupOperator(request));
     }
 
     // ── Orders ────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ public class OperatorController {
     @Operation(summary = "Get order detail (operator view)")
     @GetMapping("/orders/{id}")
     public ApiResponse<OrderResponse> getOrder(@PathVariable Long id) {
-        return ApiResponse.ok("OK", orderService.getOrderForOperator(id));
+        return ApiResponse.ok("Thành công", orderService.getOrderForOperator(id));
     }
 
     @Operation(summary = "Confirm order")
@@ -57,7 +57,7 @@ public class OperatorController {
             @AuthenticationPrincipal User operator,
             @PathVariable Long id) {
         orderStatusService.confirmOrder(id, operator);
-        return ApiResponse.ok("Order confirmed", null);
+        return ApiResponse.ok("Đơn hàng đã được xác nhận", null);
     }
 
     @Operation(summary = "Advance order to next status")
@@ -66,7 +66,7 @@ public class OperatorController {
             @AuthenticationPrincipal User operator,
             @PathVariable Long id) {
         orderStatusService.advanceOrder(id, operator);
-        return ApiResponse.ok("Order status advanced", null);
+        return ApiResponse.ok("Trạng thái đơn hàng đã được cập nhật", null);
     }
 
     @Operation(summary = "Cancel order")
@@ -76,7 +76,7 @@ public class OperatorController {
             @PathVariable Long id,
             @RequestParam String reason) {
         orderStatusService.cancelOrder(id, operator, reason);
-        return ApiResponse.ok("Order cancelled", null);
+        return ApiResponse.ok("Đơn hàng đã bị huỷ", null);
     }
 
     // ── Stripe Connect ────────────────────────────────────────────────────────
@@ -84,13 +84,13 @@ public class OperatorController {
     @Operation(summary = "Create or refresh Stripe Connect account — returns onboarding URL")
     @PostMapping("/stripe/connect")
     public ApiResponse<StripeConnectResponse> stripeConnect(@AuthenticationPrincipal User operator) {
-        return ApiResponse.ok("OK", stripeAccountService.createConnectAccount(operator));
+        return ApiResponse.ok("Thành công", stripeAccountService.createConnectAccount(operator));
     }
 
     @Operation(summary = "Get Stripe connected account balance")
     @GetMapping("/stripe/balance")
     public ApiResponse<StripeBalanceResponse> stripeBalance(@AuthenticationPrincipal User operator) {
-        return ApiResponse.ok("OK", stripeAccountService.getConnectedBalance(operator));
+        return ApiResponse.ok("Thành công", stripeAccountService.getConnectedBalance(operator));
     }
 
     // ── Coupons ───────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ public class OperatorController {
             @AuthenticationPrincipal User operator,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", couponService.getOperatorCoupons(operator, cursor, size));
+        return ApiResponse.ok("Thành công", couponService.getOperatorCoupons(operator, cursor, size));
     }
 
     @Operation(summary = "Create a coupon for my restaurant")
@@ -109,7 +109,7 @@ public class OperatorController {
     public ApiResponse<CouponResponse> createCoupon(
             @AuthenticationPrincipal User operator,
             @Valid @RequestBody CreateCouponRequest request) {
-        return ApiResponse.ok("Coupon created", couponService.createCoupon(operator, request));
+        return ApiResponse.ok("Mã giảm giá đã được tạo", couponService.createCoupon(operator, request));
     }
 
     // ── Restaurant ────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ public class OperatorController {
     public ApiResponse<RestaurantResponse> updateRestaurant(
             @AuthenticationPrincipal User operator,
             @Valid @RequestBody UpdateRestaurantRequest request) {
-        return ApiResponse.ok("Restaurant updated", restaurantService.updateRestaurant(operator, request));
+        return ApiResponse.ok("Thông tin nhà hàng đã được cập nhật", restaurantService.updateRestaurant(operator, request));
     }
 
     @Operation(summary = "Update restaurant open/close status")
@@ -128,7 +128,7 @@ public class OperatorController {
             @AuthenticationPrincipal User operator,
             @RequestBody UpdateStatusRestaurantRequest request) {
         restaurantService.updateIsOpenRestaurant(request.restaurantId(), operator, request.status());
-        return ApiResponse.ok(request.status() ? "Restaurant is now open" : "Restaurant is now closed", null);
+        return ApiResponse.ok(request.status() ? "Nhà hàng đã mở cửa" : "Nhà hàng đã đóng cửa", null);
     }
 
     // ── Categories ────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ public class OperatorController {
     public ApiResponse<CategoryResponse> createCategory(
             @AuthenticationPrincipal User operator,
             @Valid @RequestBody CreateCategoryRequest request) {
-        return ApiResponse.ok("Category created", categoryService.createCategory(operator, request));
+        return ApiResponse.ok("Danh mục đã được tạo", categoryService.createCategory(operator, request));
     }
 
     // ── Products ──────────────────────────────────────────────────────────────
@@ -149,13 +149,13 @@ public class OperatorController {
     public ApiResponse<ProductResponse> createProduct(
             @AuthenticationPrincipal User operator,
             @Valid @RequestBody CreateProductRequest request) {
-        return ApiResponse.ok("OK", productService.createProduct(operator, request));
+        return ApiResponse.ok("Sản phẩm đã được tạo", productService.createProduct(operator, request));
     }
 
     @Operation(summary = "Get product detail by ID")
     @GetMapping("/products/{id}")
     public ApiResponse<ProductResponse> getProduct(@PathVariable Long id) {
-        return ApiResponse.ok("OK", productService.getProductById(id));
+        return ApiResponse.ok("Thành công", productService.getProductById(id));
     }
 
     // ── Product Variants ──────────────────────────────────────────────────────
@@ -165,7 +165,7 @@ public class OperatorController {
     public ApiResponse<ProductVariantResponse> createVariant(
             @PathVariable Long id,
             @Valid @RequestBody CreateProductVariantRequest request) {
-        return ApiResponse.ok("OK", productVariantService.createVariant(id, request));
+        return ApiResponse.ok("Phiên bản đã được tạo", productVariantService.createVariant(id, request));
     }
 
     @Operation(summary = "List all variants of a product")
@@ -174,7 +174,7 @@ public class OperatorController {
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", productVariantService.getVariantsByProduct(id, cursor, size));
+        return ApiResponse.ok("Thành công", productVariantService.getVariantsByProduct(id, cursor, size));
     }
 
     @Operation(summary = "Get a single product variant")
@@ -182,7 +182,7 @@ public class OperatorController {
     public ApiResponse<ProductVariantResponse> getVariant(
             @PathVariable Long id,
             @PathVariable Long variantId) {
-        return ApiResponse.ok("OK", productVariantService.getVariantById(id, variantId));
+        return ApiResponse.ok("Thành công", productVariantService.getVariantById(id, variantId));
     }
 
     @Operation(summary = "Update a product variant")
@@ -191,7 +191,7 @@ public class OperatorController {
             @PathVariable Long id,
             @PathVariable Long variantId,
             @Valid @RequestBody UpdateProductVariantRequest request) {
-        return ApiResponse.ok("OK", productVariantService.updateVariant(id, variantId, request));
+        return ApiResponse.ok("Phiên bản đã được cập nhật", productVariantService.updateVariant(id, variantId, request));
     }
 
     @Operation(summary = "Deactivate a product variant")
@@ -200,6 +200,6 @@ public class OperatorController {
             @PathVariable Long id,
             @PathVariable Long variantId) {
         productVariantService.deleteVariant(id, variantId);
-        return ApiResponse.ok("Variant deactivated", null);
+        return ApiResponse.ok("Phiên bản đã được vô hiệu hoá", null);
     }
 }

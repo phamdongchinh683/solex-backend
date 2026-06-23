@@ -28,7 +28,7 @@ public class StripeWebhookService {
         try {
             event = Webhook.constructEvent(payload, sigHeader, stripeConfig.getWebhookSecret());
         } catch (SignatureVerificationException e) {
-            throw new BusinessException("Invalid Stripe webhook signature");
+            throw new BusinessException("Chữ ký webhook Stripe không hợp lệ");
         }
 
         switch (event.getType()) {

@@ -4,6 +4,7 @@ import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.ApiResponse;
 import com.example.solex_backend.dto.request.ContactCheckRequest;
 import com.example.solex_backend.dto.request.LoginRequest;
+import com.example.solex_backend.dto.request.ResetPasswordRequest;
 import com.example.solex_backend.dto.request.SendOtpRequest;
 import com.example.solex_backend.dto.request.UpdateContactRequest;
 import com.example.solex_backend.dto.request.VerifyOtpRequest;
@@ -19,8 +20,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-
-
 @Tag(name = "Auth", description = "Authentication endpoints")
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -34,38 +33,45 @@ public class AuthController {
     @PostMapping("/sign-in")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
-        return ApiResponse.ok("OK", response);
+        return ApiResponse.ok("Thành công", response);
     }
 
     @Operation(summary = "Send OTP code")
     @PostMapping("/otp/send")
     public ApiResponse<AuthResponse> sendOtp(@RequestBody SendOtpRequest request) {
         otpService.sendOtp(request);
-        return ApiResponse.ok("OK", null);
+        return ApiResponse.ok("OTP đã được gửi", null);
     }
 
     @Operation(summary = "Check if email or phone already exists")
     @PostMapping("/contact/check")
     public ApiResponse<Boolean> checkContact(@Valid @RequestBody ContactCheckRequest request) {
         boolean exists = otpService.checkContactExists(request);
-        return ApiResponse.ok("OK", exists);
+        return ApiResponse.ok("Thành công", exists);
     }
 
     @Operation(summary = "Verify OTP code")
     @PostMapping("/otp/verify")
     public ApiResponse<Void> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         otpService.verifyOtp(request);
-        return ApiResponse.ok("OK", null);
+        return ApiResponse.ok("Xác thực OTP thành công", null);
     }
 
     @Operation(summary = "Update email or phone — requires OTP sent to the new value first, 24h cooldown applies")
     @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/contact")
-    public ApiResponse<Void> updateContact(
+    public ApiResponse<User> updateContact(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody UpdateContactRequest request) {
-        authService.updateContact(user, request);
-        return ApiResponse.ok("Contact updated", null);
+        User response = authService.updateContact(user, request);
+        return ApiResponse.ok("Cập nhật thông tin liên hệ thành công", response);
+    }
+
+    @Operation(summary = "Reset password using OTP — requires OTP sent to email/phone first")
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.ok("Đặt lại mật khẩu thành công", null);
     }
 
     @Operation(summary = "Logout and invalidate current token")
@@ -73,7 +79,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ApiResponse<Void> logout() {
         authService.logout();
-        return ApiResponse.ok("OK", null);
+        return ApiResponse.ok("Đăng xuất thành công", null);
     }
 
 }

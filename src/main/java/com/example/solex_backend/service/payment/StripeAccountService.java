@@ -54,7 +54,7 @@ public class StripeAccountService {
             userRepository.save(user);
             return customer.getId();
         } catch (StripeException e) {
-            throw new BusinessException("Failed to create Stripe customer: " + e.getMessage());
+            throw new BusinessException("Không thể tạo khách hàng Stripe: " + e.getMessage());
         }
     }
 
@@ -86,7 +86,7 @@ public class StripeAccountService {
             AccountLink link = AccountLink.create(linkParams);
             return new StripeConnectResponse(accountId, link.getUrl());
         } catch (StripeException e) {
-            throw new BusinessException("Failed to create Stripe Connect account: " + e.getMessage());
+            throw new BusinessException("Không thể tạo tài khoản Stripe Connect: " + e.getMessage());
         }
     }
 
@@ -96,7 +96,7 @@ public class StripeAccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
         String stripeAccountId = restaurant.getStripeAccountId();
         if (stripeAccountId == null) {
-            throw new BusinessException("Stripe account not connected. Complete onboarding first.");
+            throw new BusinessException("Tài khoản Stripe chưa được kết nối. Vui lòng hoàn tất đăng ký trước.");
         }
         try {
             RequestOptions options = RequestOptions.builder()
@@ -109,7 +109,7 @@ public class StripeAccountService {
                     balance.getAvailable().get(0).getCurrency()
             );
         } catch (StripeException e) {
-            throw new BusinessException("Failed to retrieve Stripe balance: " + e.getMessage());
+            throw new BusinessException("Không thể lấy số dư Stripe: " + e.getMessage());
         }
     }
 }

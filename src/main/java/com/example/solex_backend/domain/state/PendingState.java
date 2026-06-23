@@ -24,6 +24,6 @@ public final class PendingState implements OrderState {
 
     @Override
     public OrderState nextStep() {
-        throw new BusinessException("Cannot advance from PENDING state");
+        throw new BusinessException("Không thể chuyển tiếp từ trạng thái CHỜ XỬ LÝ");
     }
 }

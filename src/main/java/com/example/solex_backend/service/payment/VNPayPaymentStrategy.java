@@ -92,7 +92,7 @@ public class VNPayPaymentStrategy implements PaymentStrategy {
             for (byte b : bytes) hex.append(String.format("%02x", b));
             return hex.toString();
         } catch (Exception e) {
-            throw new BusinessException("Failed to generate HMAC-SHA512");
+            throw new BusinessException("Không thể tạo mã HMAC-SHA512");
         }
     }
 }
