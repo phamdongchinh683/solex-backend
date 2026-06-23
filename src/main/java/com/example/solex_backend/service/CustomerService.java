@@ -24,8 +24,6 @@ public class CustomerService {
             user.setFirstName(request.firstName());
         if (request.lastName() != null)
             user.setLastName(request.lastName());
-        if (request.phone() != null)
-            user.setPhone(request.phone());
         userRepository.save(user);
         return toResponse(user);
     }
