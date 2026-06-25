@@ -13,13 +13,20 @@ import java.util.Optional;
 
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
     List<ProductVariant> findByProductAndIsActive(Product product, Boolean isActive);
-    @org.springframework.data.jpa.repository.Query("SELECT v FROM ProductVariant v WHERE v.product.id = :productId AND v.id > :cursor ORDER BY v.id ASC")
-    List<ProductVariant> findByProductAfterCursor(@org.springframework.data.repository.query.Param("productId") Long productId, @org.springframework.data.repository.query.Param("cursor") Long cursor, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT v FROM ProductVariant v WHERE v.product.id = :productId ORDER BY v.price ASC")
+    List<ProductVariant> findVariantsByProductId(
+            @org.springframework.data.repository.query.Param("productId") Long productId);
 
     @org.springframework.data.jpa.repository.Query("SELECT v FROM ProductVariant v WHERE v.product.id = :productId AND v.isActive = true AND v.id > :cursor ORDER BY v.id ASC")
-    List<ProductVariant> findActiveByProductAfterCursor(@org.springframework.data.repository.query.Param("productId") Long productId, @org.springframework.data.repository.query.Param("cursor") Long cursor, Pageable pageable);
+    List<ProductVariant> findActiveByProductAfterCursor(
+            @org.springframework.data.repository.query.Param("productId") Long productId,
+            @org.springframework.data.repository.query.Param("cursor") Long cursor, Pageable pageable);
+
     Optional<ProductVariant> findByIdAndProduct_Id(Long id, Long productId);
+
     boolean existsByIdAndProduct_Id(Long id, Long productId);
+
     boolean existsBySku(String sku);
 
     @Modifying(clearAutomatically = true)

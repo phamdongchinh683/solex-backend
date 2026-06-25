@@ -5,9 +5,6 @@ import com.example.solex_backend.dto.ApiResponse;
 import com.example.solex_backend.dto.request.*;
 import com.example.solex_backend.dto.response.*;
 import com.example.solex_backend.service.*;
-import com.example.solex_backend.dto.response.CouponResponse;
-import com.example.solex_backend.dto.response.CardResponse;
-import com.example.solex_backend.dto.response.SetupIntentResponse;
 import com.example.solex_backend.service.payment.StripeCardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Tag(name = "Customer", description = "Customer endpoints")
@@ -114,14 +112,8 @@ public class CustomerController {
 
     @Operation(summary = "Get restaurant detail by ID")
     @GetMapping("/restaurants/{id}")
-    public ApiResponse<RestaurantResponse> getRestaurant(@PathVariable Long id) {
+    public ApiResponse<RestaurantDetailResponse> getRestaurant(@PathVariable Long id) {
         return ApiResponse.ok("Thành công", restaurantService.getRestaurantById(id));
-    }
-
-    @Operation(summary = "List categories in a restaurant")
-    @GetMapping("/restaurants/{id}/categories")
-    public ApiResponse<List<CategoryResponse>> getCategories(@PathVariable Long id) {
-        return ApiResponse.ok("Thành công", restaurantService.getCategoriesForRestaurant(id));
     }
 
     @Operation(summary = "Get restaurant menu with optional filters")
@@ -134,6 +126,15 @@ public class CustomerController {
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.ok("Thành công",
                 restaurantService.getMenuByRestaurantId(restaurantId, categoryId, search, cursor, size));
+    }
+
+    @Operation(summary = "Check coupon by ID or code with subtotal to calculate discount")
+    @GetMapping("/coupons/check")
+    public ApiResponse<CouponCheckResponse> checkCoupon(
+            @Parameter(description = "Coupon ID") @RequestParam(required = false) Long couponId,
+            @Parameter(description = "Coupon code") @RequestParam(required = false) String code,
+            @Parameter(description = "Order subtotal to calculate discount") @RequestParam BigDecimal subtotal) {
+        return ApiResponse.ok("Thành công", couponService.checkCoupon(couponId, code, subtotal));
     }
 
     @Operation(summary = "Get active coupons for a restaurant")
@@ -164,27 +165,11 @@ public class CustomerController {
         return ApiResponse.ok("Đánh giá thành công", ratingService.rateRestaurant(restaurantId, user, request));
     }
 
-    @Operation(summary = "Get product detail by ID")
-    @GetMapping("/products/{id}")
-    public ApiResponse<ProductResponse> getProduct(@PathVariable Long id) {
-        return ApiResponse.ok("Thành công", productService.getProductById(id));
-    }
-
     @Operation(summary = "List all variants of a product")
     @GetMapping("/products/{id}/variants")
-    public ApiResponse<SliceResponse<CustomerVariantResponse>> getVariants(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") Long cursor,
-            @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("Thành công", productVariantService.getCustomerVariantsByProduct(id, cursor, size));
-    }
-
-    @Operation(summary = "Get a single product variant")
-    @GetMapping("/products/{id}/variants/{variantId}")
-    public ApiResponse<CustomerVariantResponse> getVariant(
-            @PathVariable Long id,
-            @PathVariable Long variantId) {
-        return ApiResponse.ok("Thành công", productVariantService.getCustomerVariantById(id, variantId));
+    public ApiResponse<List<VariantResponse>> getVariants(
+            @PathVariable Long id) {
+        return ApiResponse.ok("Thành công", productVariantService.findAllByProductionId(id));
     }
 
     @Operation(summary = "Create Stripe SetupIntent — use returned clientSecret with Stripe.js to save a card")
@@ -285,6 +270,6 @@ public class CustomerController {
             @RequestParam double userLat,
             @RequestParam double userLng) {
         return ApiResponse.ok("Thành công",
-                shippingService.calculateShippingFee(restaurantLat, restaurantLng, userLat, userLng));
+                shippingService.calculateShippingFee(restaurantLng, restaurantLat, userLng, userLat));
     }
 }

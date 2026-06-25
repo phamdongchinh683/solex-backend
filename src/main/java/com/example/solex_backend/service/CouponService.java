@@ -5,6 +5,7 @@ import com.example.solex_backend.domain.Order;
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateCouponRequest;
+import com.example.solex_backend.dto.response.CouponCheckResponse;
 import com.example.solex_backend.dto.response.CouponResponse;
 import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
@@ -148,7 +149,73 @@ public class CouponService {
         }
     }
 
-    private BigDecimal calculateDiscount(Coupon coupon, BigDecimal subtotal) {
+    @Transactional(readOnly = true)
+    public CouponCheckResponse checkCoupon(Long couponId, String couponCode, BigDecimal subtotal) {
+        Coupon coupon;
+        if (couponId != null) {
+            coupon = couponRepository.findById(couponId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Coupon not found: " + couponId));
+        } else if (couponCode != null && !couponCode.isBlank()) {
+            coupon = couponRepository.findByCode(couponCode.toUpperCase())
+                    .orElseThrow(() -> new ResourceNotFoundException("Coupon not found: " + couponCode));
+        } else {
+            throw new BusinessException("Vui lòng cung cấp couponId hoặc couponCode");
+        }
+
+        StringBuilder message = new StringBuilder();
+        boolean isValid = true;
+
+        // Check active
+        if (!Boolean.TRUE.equals(coupon.getIsActive())) {
+            message.append("Mã giảm giá không hoạt động. ");
+            isValid = false;
+        }
+
+        // Check expiry
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(coupon.getStartDate()) || now.isAfter(coupon.getExpiryDate())) {
+            message.append("Mã giảm giá đã hết hạn hoặc chưa có hiệu lực. ");
+            isValid = false;
+        }
+
+        // Check usage limit
+        if (coupon.getUsageLimit() != null && coupon.getUsageCount() >= coupon.getUsageLimit()) {
+            message.append("Mã giảm giá đã đạt giới hạn sử dụng. ");
+            isValid = false;
+        }
+
+        // Check min order amount
+        if (coupon.getMinOrderAmount() != null && subtotal.compareTo(coupon.getMinOrderAmount()) < 0) {
+            message.append("Tổng tiền đơn hàng chưa đạt giá trị tối thiểu " + coupon.getMinOrderAmount() + ". ");
+            isValid = false;
+        }
+
+        BigDecimal discountAmount = isValid ? calculateDiscount(coupon, subtotal) : BigDecimal.ZERO;
+        BigDecimal finalAmount = subtotal.subtract(discountAmount).max(BigDecimal.ZERO);
+
+        if (isValid && message.isEmpty()) {
+            message.append("Mã giảm giá hợp lệ");
+        }
+
+        return new CouponCheckResponse(
+                coupon.getId(),
+                coupon.getCode(),
+                coupon.getRestaurant().getId(),
+                coupon.getDiscountType(),
+                coupon.getDiscountValue().longValue(),
+                coupon.getMinOrderAmount() != null ? coupon.getMinOrderAmount().longValue() : null,
+                coupon.getMaxDiscountAmount() != null ? coupon.getMaxDiscountAmount().longValue() : null,
+                subtotal.longValue(),
+                discountAmount.longValue(),
+                finalAmount.longValue(),
+                coupon.getStartDate(),
+                coupon.getExpiryDate(),
+                isValid,
+                message.toString().trim()
+        );
+    }
+
+    public BigDecimal calculateDiscount(Coupon coupon, BigDecimal subtotal) {
         BigDecimal discount;
 
         if (coupon.getDiscountType() == CouponDiscountType.PERCENTAGE) {

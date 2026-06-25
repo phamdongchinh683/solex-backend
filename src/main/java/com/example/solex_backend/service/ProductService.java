@@ -2,7 +2,6 @@ package com.example.solex_backend.service;
 
 import com.example.solex_backend.domain.Category;
 import com.example.solex_backend.domain.Product;
-import com.example.solex_backend.domain.ProductImage;
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.CreateProductRequest;
@@ -11,7 +10,6 @@ import com.example.solex_backend.dto.response.ProductVariantResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.CategoryRepository;
-import com.example.solex_backend.repository.ProductImageRepository;
 import com.example.solex_backend.repository.ProductRepository;
 import com.example.solex_backend.repository.ProductVariantRepository;
 import com.example.solex_backend.repository.RestaurantRepository;
@@ -28,14 +26,10 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final ProductImageRepository productImageRepository;
+    private final CategoryRepository categoryRepository;;
     private final ProductVariantRepository productVariantRepository;
     private final RestaurantRepository restaurantRepository;
 
-    // Rule 1: existsByIdAndOperator adds missing operator-ownership check on restaurantId
-    // Rule 2: getReferenceById replaces findById used only for FK assignment;
-    //         existsByIdAndRestaurant_Id replaces findById on category to avoid lazy-loading restaurant
     public ProductResponse createProduct(User operator, CreateProductRequest request) {
         if (!restaurantRepository.existsByIdAndOperator(request.restaurantId(), operator)) {
             throw new ResourceNotFoundException("Restaurant not found: " + request.restaurantId());
@@ -53,22 +47,11 @@ public class ProductService {
                 .description(request.description())
                 .restaurant(restaurant)
                 .category(category)
+                .image(request.image())
                 .basePrice(request.basePrice())
                 .isActive(request.isActive() != null ? request.isActive() : true)
                 .build();
         productRepository.save(product);
-
-        if (request.images() != null) {
-            for (String url : request.images()) {
-                ProductImage image = ProductImage.builder()
-                        .product(product)
-                        .url(url)
-                        .isPrimary(false)
-                        .sortOrder(0)
-                        .build();
-                productImageRepository.save(image);
-            }
-        }
 
         return toProductResponse(product);
     }
@@ -80,21 +63,17 @@ public class ProductService {
     }
 
     private ProductResponse toProductResponse(Product p) {
-        List<String> images = productImageRepository.findByProduct(p).stream()
-                .map(ProductImage::getUrl)
-                .collect(Collectors.toList());
-
         List<ProductVariantResponse> variants = productVariantRepository.findByProductAndIsActive(p, true).stream()
                 .map(v -> new ProductVariantResponse(
-                        v.getId(), v.getSku(), v.getSize(),
-                        v.getPrice(), v.getStock(), v.getImageUrl(), v.getIsActive()
-                ))
+                        v.getId(), v.getSku(),
+                        v.getPrice(), v.getImage(), v.getSize(), v.getName(), v.getIsActive()))
                 .collect(Collectors.toList());
 
         return new ProductResponse(
                 p.getId(), p.getName(), p.getDescription(), p.getBasePrice(),
                 p.getIsActive(), p.getCategory().getId(), p.getCategory().getName(),
-                images, variants
-        );
+                p.getImage());
     }
+
+    
 }

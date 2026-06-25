@@ -1,13 +1,9 @@
 package com.example.solex_backend.dto.response;
 
-
-import java.math.BigDecimal;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public record CartItemResponse(
-        Long id,
-        ProductResponse product,
-        ProductVariantResponse variant,
-        Integer quantity,
-        BigDecimal itemPrice
-) {
+        @Schema(description = "Cart item ID") Long id,
+        @Schema(description = "Quantity") Integer quantity,
+        @Schema(description = "Product info") ProductionCartItemResponse product) {
 }

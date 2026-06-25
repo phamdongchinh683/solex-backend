@@ -7,10 +7,10 @@ import java.math.BigDecimal;
 public record ProductVariantResponse(
         @Schema(description = "Variant ID") Long id,
         @Schema(description = "SKU") String sku,
-        @Schema(description = "Size") String size,
         @Schema(description = "Price") BigDecimal price,
-        @Schema(description = "Stock") Integer stock,
-        @Schema(description = "Image URL") String imageUrl,
+        @Schema(description = "Image URL") String image,
+        @Schema(description = "Size") String size,
+        @Schema(description = "Name") String name,
         @Schema(description = "Is active") Boolean isActive
 ) {
 }

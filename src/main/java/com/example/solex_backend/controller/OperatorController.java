@@ -12,6 +12,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -116,10 +119,11 @@ public class OperatorController {
 
     @Operation(summary = "Update restaurant info (all fields optional)")
     @PatchMapping("/restaurant")
-    public ApiResponse<RestaurantResponse> updateRestaurant(
+    public ApiResponse<RestaurantDetailResponse> updateRestaurant(
             @AuthenticationPrincipal User operator,
             @Valid @RequestBody UpdateRestaurantRequest request) {
-        return ApiResponse.ok("Thông tin nhà hàng đã được cập nhật", restaurantService.updateRestaurant(operator, request));
+        return ApiResponse.ok("Thông tin nhà hàng đã được cập nhật",
+                restaurantService.updateRestaurant(operator, request));
     }
 
     @Operation(summary = "Update restaurant open/close status")
@@ -170,11 +174,9 @@ public class OperatorController {
 
     @Operation(summary = "List all variants of a product")
     @GetMapping("/products/{id}/variants")
-    public ApiResponse<SliceResponse<ProductVariantResponse>> getVariants(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "0") Long cursor,
-            @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("Thành công", productVariantService.getVariantsByProduct(id, cursor, size));
+    public ApiResponse<List<VariantResponse>> getVariants(
+            @PathVariable Long id) {
+        return ApiResponse.ok("Thành công", productVariantService.findAllByProductionId(id));
     }
 
     @Operation(summary = "Get a single product variant")
@@ -191,7 +193,8 @@ public class OperatorController {
             @PathVariable Long id,
             @PathVariable Long variantId,
             @Valid @RequestBody UpdateProductVariantRequest request) {
-        return ApiResponse.ok("Phiên bản đã được cập nhật", productVariantService.updateVariant(id, variantId, request));
+        return ApiResponse.ok("Phiên bản đã được cập nhật",
+                productVariantService.updateVariant(id, variantId, request));
     }
 
     @Operation(summary = "Deactivate a product variant")

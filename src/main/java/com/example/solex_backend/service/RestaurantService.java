@@ -8,15 +8,12 @@ import com.example.solex_backend.dto.request.CreateCategoryRequest;
 import com.example.solex_backend.dto.request.UpdateRestaurantRequest;
 import com.example.solex_backend.dto.response.CategoryResponse;
 import com.example.solex_backend.dto.response.ProductResponse;
-import com.example.solex_backend.dto.response.ProductVariantResponse;
+import com.example.solex_backend.dto.response.RestaurantDetailResponse;
 import com.example.solex_backend.dto.response.RestaurantResponse;
 import com.example.solex_backend.dto.response.SliceResponse;
-import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.CategoryRepository;
-import com.example.solex_backend.repository.ProductImageRepository;
 import com.example.solex_backend.repository.ProductQueryRepository;
-import com.example.solex_backend.repository.ProductVariantRepository;
 import com.example.solex_backend.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -34,8 +31,6 @@ public class RestaurantService {
         private final RestaurantRepository restaurantRepository;
         private final CategoryRepository categoryRepository;
         private final ProductQueryRepository productQueryRepository;
-        private final ProductImageRepository productImageRepository;
-        private final ProductVariantRepository productVariantRepository;
 
         public SliceResponse<RestaurantResponse> getAllRestaurants(String name, Long cursor, int size) {
                 List<Restaurant> result = (name != null && !name.isBlank())
@@ -48,16 +43,10 @@ public class RestaurantService {
                 return new SliceResponse<>(page.stream().map(this::toRestaurantResponse).toList(), nextCursor);
         }
 
-        public RestaurantResponse getRestaurantById(Long id) {
+        public RestaurantDetailResponse getRestaurantById(Long id) {
                 Restaurant restaurant = restaurantRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + id));
-                return toRestaurantResponse(restaurant);
-        }
-
-        public List<CategoryResponse> getCategoriesForRestaurant(Long id) {
-                return categoryRepository.findByRestaurant_IdOrderByName(id).stream()
-                                .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getImageUrl()))
-                                .toList();
+                return toRestaurantDetailResponse(restaurant);
         }
 
         public CategoryResponse createCategory(User operator, CreateCategoryRequest request) {
@@ -97,26 +86,27 @@ public class RestaurantService {
                                 r.getIsOpen(), r.getImageUrl());
         }
 
-        private ProductResponse toProductResponse(Product p) {
-                List<String> images = productImageRepository.findByProduct(p).stream()
-                                .map(img -> img.getUrl())
-                                .collect(Collectors.toList());
-
-                List<ProductVariantResponse> variants = productVariantRepository.findByProductAndIsActive(p, true)
+        private RestaurantDetailResponse toRestaurantDetailResponse(Restaurant r) {
+                List<CategoryResponse> categories = categoryRepository.findByRestaurant_IdOrderByName(r.getId())
                                 .stream()
-                                .map(v -> new ProductVariantResponse(
-                                                v.getId(), v.getSku(), v.getSize(),
-                                                v.getPrice(), v.getStock(), v.getImageUrl(), v.getIsActive()))
-                                .collect(Collectors.toList());
+                                .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getImageUrl()))
+                                .toList();
+                return new RestaurantDetailResponse(
+                                r.getId(), r.getName(), r.getDescription(), r.getPhone(),
+                                r.getAddressDetail(), r.getLongitude(), r.getLatitude(),
+                                r.getStar1(), r.getStar2(), r.getStar3(), r.getStar4(), r.getStar5(),
+                                r.getIsOpen(), r.getImageUrl(), categories);
+        }
 
+        private ProductResponse toProductResponse(Product p) {
                 return new ProductResponse(
                                 p.getId(), p.getName(), p.getDescription(), p.getBasePrice(),
                                 p.getIsActive(), p.getCategory().getId(), p.getCategory().getName(),
-                                images, variants);
+                                p.getImage());
         }
 
         @Transactional
-        public RestaurantResponse updateRestaurant(User operator, UpdateRestaurantRequest request) {
+        public RestaurantDetailResponse updateRestaurant(User operator, UpdateRestaurantRequest request) {
                 Restaurant restaurant = restaurantRepository.findByOperator(operator)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Restaurant not found for this operator"));
@@ -136,7 +126,7 @@ public class RestaurantService {
                 if (request.imageUrl() != null)
                         restaurant.setImageUrl(request.imageUrl());
 
-                return toRestaurantResponse(restaurantRepository.save(restaurant));
+                return toRestaurantDetailResponse(restaurantRepository.save(restaurant));
         }
 
         @Transactional

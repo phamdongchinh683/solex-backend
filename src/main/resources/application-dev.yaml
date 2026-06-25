@@ -14,3 +14,6 @@ springdoc:
   api-docs:
     path: /api-docs
   packages-to-scan: com.example.solex_backend.controller
+
+openroute-service:
+  api-key: ${OPENROUTE_API_KEY:}

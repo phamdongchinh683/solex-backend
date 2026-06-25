@@ -29,25 +29,23 @@ public class ProductVariant extends BaseEntity {
     @Column(nullable = false, unique = true, length = 100)
     private String sku;
 
-    @Column(length = 20)
-    private String size;
-
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false)
-    private Integer stock;
-
     @Column(columnDefinition = "text")
-    private String imageUrl;
+    private String image;
+
+    @Column(length = 50)
+    private String size;
+
+    @Column(length = 100)
+    private String name;
 
     @Column(name = "is_active")
     private Boolean isActive;
 
     @PrePersist
     protected void onCreate() {
-        if (stock == null)
-            stock = 0;
         if (isActive == null)
             isActive = true;
     }

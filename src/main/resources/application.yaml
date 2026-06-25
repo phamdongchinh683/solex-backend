@@ -38,7 +38,7 @@ resend:
 esms:
   api-key: ${ESMS_API_KEY}
   secret: ${ESMS_SECRET}
-  
+
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
@@ -50,6 +50,9 @@ vnpay:
   hash-secret: ${VNPAY_HASH_SECRET:}
   payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
   return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/vnpay/ipn}
+
+openroute-service:
+  api-key: ${OPENROUTE_API_KEY:}
 
 springdoc:
   swagger-ui:
