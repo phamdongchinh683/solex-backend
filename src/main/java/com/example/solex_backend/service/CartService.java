@@ -2,18 +2,21 @@ package com.example.solex_backend.service;
 
 import com.example.solex_backend.domain.Cart;
 import com.example.solex_backend.domain.CartItem;
+import com.example.solex_backend.domain.Product;
 import com.example.solex_backend.domain.ProductVariant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.AddToCartRequest;
 import com.example.solex_backend.dto.response.CartItemResponse;
 import com.example.solex_backend.dto.response.ProductResponse;
 import com.example.solex_backend.dto.response.ProductVariantResponse;
+import com.example.solex_backend.dto.response.ProductionCartItemResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.ProductVariantRepository;
 import com.example.solex_backend.repository.CartRepository;
 import com.example.solex_backend.repository.CartItemRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,18 +43,19 @@ public class CartService {
     public CartItemResponse addToCart(User user, AddToCartRequest request) {
         Cart cart = getOrCreateCart(user);
         ProductVariant variant = productVariantRepository.findById(request.productVariantId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + request.productVariantId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Product variant not found: " + request.productVariantId()));
 
         List<CartItem> existingItems = cartItemRepository.findByCart(cart);
         if (!existingItems.isEmpty()) {
             Long existingRestaurantId = existingItems.get(0).getVariant().getProduct().getRestaurant().getId();
             Long incomingRestaurantId = variant.getProduct().getRestaurant().getId();
             if (!existingRestaurantId.equals(incomingRestaurantId)) {
-                String existingRestaurantName = existingItems.get(0).getVariant().getProduct().getRestaurant().getName();
+                String existingRestaurantName = existingItems.get(0).getVariant().getProduct().getRestaurant()
+                        .getName();
                 throw new BusinessException(
                         "Giỏ hàng của bạn đã có sản phẩm từ nhà hàng \"" + existingRestaurantName + "\". " +
-                        "Vui lòng xoá giỏ hàng trước khi thêm sản phẩm từ nhà hàng khác."
-                );
+                                "Vui lòng xoá giỏ hàng trước khi thêm sản phẩm từ nhà hàng khác.");
             }
         }
 
@@ -106,22 +110,23 @@ public class CartService {
 
     private CartItemResponse toCartItemResponse(CartItem item) {
         ProductVariant variant = item.getVariant();
-        ProductResponse product = new ProductResponse(
+        ProductionCartItemResponse product = new ProductionCartItemResponse(
                 variant.getProduct().getId(),
                 variant.getProduct().getName(),
                 variant.getProduct().getDescription(),
-                variant.getProduct().getBasePrice(),
-                variant.getProduct().getIsActive(),
-                variant.getProduct().getCategory().getId(),
-                variant.getProduct().getCategory().getName(),
-                List.of(),
-                List.of()
-        );
-        ProductVariantResponse variantResponse = new ProductVariantResponse(
-                variant.getId(), variant.getSku(), variant.getSize(),
-                variant.getPrice(), variant.getStock(), variant.getImageUrl(), variant.getIsActive()
-        );
-        BigDecimal itemPrice = variant.getPrice().multiply(new BigDecimal(item.getQuantity()));
-        return new CartItemResponse(item.getId(), product, variantResponse, item.getQuantity(), itemPrice);
+                variant.getProduct().getImage(),
+                new ProductVariantResponse(
+                        variant.getId(),
+                        variant.getSku(),
+                        variant.getPrice(),
+                        variant.getImage(),
+                        variant.getSize(),
+                        variant.getName(),
+                        variant.getIsActive()));
+
+        return new CartItemResponse(
+                item.getId(),
+                item.getQuantity(),
+                product);
     }
 }
