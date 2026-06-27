@@ -5,6 +5,7 @@ import com.example.solex_backend.domain.Payment;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.service.OrderStatusService;
 import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
@@ -33,8 +34,7 @@ public class StripeWebhookService {
 
         switch (event.getType()) {
             case "payment_intent.succeeded" -> {
-                PaymentIntent intent = (PaymentIntent) event.getDataObjectDeserializer()
-                        .getObject().orElseThrow();
+                PaymentIntent intent = deserializeIntent(event);
                 String transactionRef = intent.getMetadata().get("transactionRef");
                 log.info("Stripe payment succeeded: id={}", intent.getId());
                 Payment payment = paymentService.findByTransactionRef(transactionRef);
@@ -42,8 +42,7 @@ public class StripeWebhookService {
                 orderStatusService.confirmOrderByPayment(payment.getOrder().getId());
             }
             case "payment_intent.payment_failed" -> {
-                PaymentIntent intent = (PaymentIntent) event.getDataObjectDeserializer()
-                        .getObject().orElseThrow();
+                PaymentIntent intent = deserializeIntent(event);
                 String transactionRef = intent.getMetadata().get("transactionRef");
                 log.info("Stripe payment failed: id={}", intent.getId());
                 Payment payment = paymentService.findByTransactionRef(transactionRef);
@@ -52,5 +51,17 @@ public class StripeWebhookService {
             }
             default -> log.debug("Unhandled Stripe event: {}", event.getType());
         }
+    }
+
+    private PaymentIntent deserializeIntent(Event event) {
+        return (PaymentIntent) event.getDataObjectDeserializer()
+                .getObject()
+                .orElseGet(() -> {
+                    try {
+                        return event.getDataObjectDeserializer().deserializeUnsafe();
+                    } catch (StripeException e) {
+                        throw new BusinessException("Không thể đọc dữ liệu webhook Stripe: " + e.getMessage());
+                    }
+                });
     }
 }
