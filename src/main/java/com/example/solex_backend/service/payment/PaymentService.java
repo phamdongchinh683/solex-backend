@@ -63,7 +63,7 @@ public class PaymentService {
                 .commissionAmount(commissionAmount)
                 .transactionRef(transactionRef)
                 .build();
-        paymentRepository.save(payment);
+        paymentRepository.saveAndFlush(payment);
 
         PaymentStrategy strategy = strategies.stream()
                 .filter(s -> s.supports(request.method()))
@@ -74,7 +74,7 @@ public class PaymentService {
 
         if (result.transactionRef() != null && !result.transactionRef().equals(transactionRef)) {
             payment.setTransactionRef(result.transactionRef());
-            paymentRepository.save(payment);
+            paymentRepository.saveAndFlush(payment);
         }
 
         return new PaymentIntentResponse(
