@@ -101,6 +101,10 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found for ref: " + ref));
     }
 
+    public java.util.Optional<Payment> findOptionalByTransactionRef(String ref) {
+        return paymentRepository.findByTransactionRef(ref);
+    }
+
     public void markSuccess(Payment payment, String gatewayResponse) {
         payment.setStatus(PaymentStatus.SUCCESS.name());
         payment.setGatewayResponse(gatewayResponse);
