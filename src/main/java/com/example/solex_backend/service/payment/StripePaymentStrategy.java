@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.math.RoundingMode;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -29,10 +31,10 @@ public class StripePaymentStrategy implements PaymentStrategy {
 
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount(order.getTotalAmount().longValueExact())
+                    .setAmount(order.getTotalAmount().setScale(0, RoundingMode.HALF_UP).longValue())
                     .setCurrency("vnd")
                     .setCustomer(stripeCustomerId)
-                    .setApplicationFeeAmount(payment.getCommissionAmount().longValueExact())
+                    .setApplicationFeeAmount(payment.getCommissionAmount().setScale(0, RoundingMode.HALF_UP).longValue())
                     .setTransferData(
                             PaymentIntentCreateParams.TransferData.builder()
                                     .setDestination(stripeAccountId)

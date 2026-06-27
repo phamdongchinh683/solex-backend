@@ -28,6 +28,28 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     @Query("select r from Restaurant r where r.id = :id")
     Optional<Restaurant> findByIdForUpdate(@Param("id") Long id);
 
+    @Query(value = """
+            SELECT * FROM restaurants
+            WHERE is_open = true
+              AND (6371 * acos(LEAST(1.0,
+                    cos(radians(:lat)) * cos(radians(latitude))
+                    * cos(radians(longitude) - radians(:lng))
+                    + sin(radians(:lat)) * sin(radians(latitude))
+                  ))) <= :radiusKm
+            ORDER BY (6371 * acos(LEAST(1.0,
+                    cos(radians(:lat)) * cos(radians(latitude))
+                    * cos(radians(longitude) - radians(:lng))
+                    + sin(radians(:lat)) * sin(radians(latitude))
+                  ))) ASC
+            LIMIT :size OFFSET :offset
+            """, nativeQuery = true)
+    List<Restaurant> findNearbyOpen(
+            @Param("lat") double lat,
+            @Param("lng") double lng,
+            @Param("radiusKm") double radiusKm,
+            @Param("size") int size,
+            @Param("offset") int offset);
+
     @Modifying
     @Query("UPDATE Restaurant rs SET rs.isOpen = :status WHERE rs.operator.id = :operatorId and rs.id = :id")
     int updateStatusByOperator(

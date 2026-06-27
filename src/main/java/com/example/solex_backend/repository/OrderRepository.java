@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.user = :user AND o.id < :cursor ORDER BY o.id DESC")
-    List<Order> findByUserBeforeCursor(@Param("user") User user, @Param("cursor") Long cursor, Pageable pageable);
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.id = :id AND o.user = :user")
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.user = :user AND o.id < :cursor AND (:status IS NULL OR o.status = :status) ORDER BY o.id DESC")
+    List<Order> findByUserBeforeCursor(@Param("user") User user, @Param("cursor") Long cursor, @Param("status") String status, Pageable pageable);
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items LEFT JOIN FETCH o.address LEFT JOIN FETCH o.restaurant WHERE o.id = :id AND o.user = :user")
     Optional<Order> findByIdAndUser(@Param("id") Long id, @Param("user") User user);
-    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.id = :id")
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items LEFT JOIN FETCH o.address LEFT JOIN FETCH o.restaurant WHERE o.id = :id")
     Optional<Order> findByIdWithItems(@Param("id") Long id);
 
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.restaurant.id = :restaurantId AND o.id < :cursor AND (:status IS NULL OR o.status = :status) ORDER BY o.id DESC")

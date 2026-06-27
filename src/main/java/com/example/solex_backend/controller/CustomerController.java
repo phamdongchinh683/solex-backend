@@ -34,7 +34,6 @@ public class CustomerController {
     private final OrderService orderService;
     private final ShippingService shippingService;
     private final RatingService ratingService;
-    private final ProductService productService;
     private final ProductVariantService productVariantService;
     private final RestaurantService restaurantService;
     private final CouponService couponService;
@@ -101,6 +100,17 @@ public class CustomerController {
         return ApiResponse.ok("Địa chỉ mặc định đã được thiết lập", addressService.setDefaultAddress(id, user));
     }
 
+    @Operation(summary = "Search nearby open restaurants sorted by distance")
+    @GetMapping("/restaurants/nearby")
+    public ApiResponse<SliceResponse<RestaurantNearbyResponse>> getNearbyRestaurants(
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @Parameter(description = "Search radius in kilometres") @RequestParam(defaultValue = "12.0") double radius,
+            @RequestParam(defaultValue = "0") int cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok("Thành công", restaurantService.getNearbyRestaurants(lat, lng, radius, cursor, size));
+    }
+
     @Operation(summary = "List open restaurants")
     @GetMapping("/restaurants")
     public ApiResponse<SliceResponse<RestaurantResponse>> getAllRestaurants(
@@ -157,12 +167,12 @@ public class CustomerController {
     }
 
     @Operation(summary = "Create or update my restaurant rating")
-    @PostMapping("/restaurants/{restaurantId}/ratings")
+    @PostMapping("/orders/{orderId}/rating")
     public ApiResponse<RatingResponse> rateRestaurant(
-            @PathVariable Long restaurantId,
+            @PathVariable Long orderId,
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreateRatingRequest request) {
-        return ApiResponse.ok("Đánh giá thành công", ratingService.rateRestaurant(restaurantId, user, request));
+        return ApiResponse.ok("Đánh giá thành công", ratingService.rateRestaurant(orderId, user, request));
     }
 
     @Operation(summary = "List all variants of a product")
@@ -204,7 +214,7 @@ public class CustomerController {
 
     @Operation(summary = "Get current user's cart items")
     @GetMapping("/cart")
-    public ApiResponse<List<CartItemResponse>> getCart(@AuthenticationPrincipal User user) {
+    public ApiResponse<CartResponse> getCart(@AuthenticationPrincipal User user) {
         return ApiResponse.ok("Thành công", cartService.getCartItems(user));
     }
 
@@ -250,8 +260,9 @@ public class CustomerController {
     public ApiResponse<SliceResponse<OrderResponse>> getMyOrders(
             @AuthenticationPrincipal User user,
             @RequestParam(defaultValue = "9223372036854775807") Long cursor,
-            @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok("Thành công", orderService.getMyOrders(user, cursor, size));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status) {
+        return ApiResponse.ok("Thành công", orderService.getMyOrders(user, cursor, size, status));
     }
 
     @Operation(summary = "Get order detail")
@@ -274,10 +285,10 @@ public class CustomerController {
     @GetMapping("/shipping/fee")
     public ApiResponse<ShippingFeeResponse> calculateFee(
             @RequestParam double restaurantLat,
-            @RequestParam double restaurantLng,
+            @RequestParam double restaurantLong,
             @RequestParam double userLat,
-            @RequestParam double userLng) {
+            @RequestParam double userLong) {
         return ApiResponse.ok("Thành công",
-                shippingService.calculateShippingFee(restaurantLng, restaurantLat, userLng, userLat));
+                shippingService.calculateShippingFee(restaurantLong, restaurantLat, userLong, userLat));
     }
 }

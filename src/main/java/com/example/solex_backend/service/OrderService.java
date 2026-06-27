@@ -31,6 +31,7 @@ public class OrderService {
         private final CartRepository cartRepository;
         private final AddressRepository addressRepository;
         private final RestaurantRepository restaurantRepository;
+        private final PaymentRepository paymentRepository;
         private final ShippingService shippingService;
         private final CouponService couponService;
 
@@ -132,8 +133,9 @@ public class OrderService {
                                 .collect(Collectors.toList());
         }
 
-        public SliceResponse<OrderResponse> getMyOrders(User user, Long cursor, int size) {
-                List<Order> result = orderRepository.findByUserBeforeCursor(user, cursor, PageRequest.of(0, size + 1));
+        public SliceResponse<OrderResponse> getMyOrders(User user, Long cursor, int size, String status) {
+                List<Order> result = orderRepository.findByUserBeforeCursor(user, cursor, status,
+                                PageRequest.of(0, size + 1));
                 boolean hasNext = result.size() > size;
                 List<Order> page = hasNext ? result.subList(0, size) : result;
                 Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
@@ -220,6 +222,9 @@ public class OrderService {
                                                 item.getUnitPrice().multiply(new BigDecimal(item.getQuantity()))))
                                 .collect(Collectors.toList());
 
+                List<Payment> payments = paymentRepository.findByOrder(order);
+                Payment latestPayment = payments.isEmpty() ? null : payments.get(payments.size() - 1);
+
                 return new OrderDetailResponse(
                                 order.getId(),
                                 order.getOrderCode(),
@@ -229,7 +234,15 @@ public class OrderService {
                                 order.getDiscountAmount(),
                                 order.getTotalAmount(),
                                 order.getNote(),
+                                order.getRate(),
                                 order.getCreatedAt(),
+                                order.getRestaurant().getLatitude(),
+                                order.getRestaurant().getLongitude(),
+                                order.getAddress().getLatitude(),
+                                order.getAddress().getLongitude(),
+                                latestPayment != null ? latestPayment.getMethod() : null,
+                                latestPayment != null ? latestPayment.getStatus() : null,
+                                latestPayment != null ? latestPayment.getTransactionRef() : null,
                                 items);
         }
 }

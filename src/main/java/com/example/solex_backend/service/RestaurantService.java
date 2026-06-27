@@ -9,6 +9,7 @@ import com.example.solex_backend.dto.request.UpdateRestaurantRequest;
 import com.example.solex_backend.dto.response.CategoryResponse;
 import com.example.solex_backend.dto.response.ProductResponse;
 import com.example.solex_backend.dto.response.RestaurantDetailResponse;
+import com.example.solex_backend.dto.response.RestaurantNearbyResponse;
 import com.example.solex_backend.dto.response.RestaurantResponse;
 import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.ResourceNotFoundException;
@@ -76,6 +77,37 @@ public class RestaurantService {
                 Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
                 return new SliceResponse<>(page.stream().map(this::toProductResponse).collect(Collectors.toList()),
                                 nextCursor);
+        }
+
+        public SliceResponse<RestaurantNearbyResponse> getNearbyRestaurants(
+                        double lat, double lng, double radiusKm, int offset, int size) {
+                List<Restaurant> result = restaurantRepository.findNearbyOpen(lat, lng, radiusKm, size + 1, offset);
+                boolean hasNext = result.size() > size;
+                List<Restaurant> page = hasNext ? result.subList(0, size) : result;
+                Long nextCursor = hasNext ? (long) (offset + size) : null;
+                return new SliceResponse<>(
+                                page.stream().map(r -> toRestaurantNearbyResponse(r, lat, lng)).toList(),
+                                nextCursor);
+        }
+
+        private RestaurantNearbyResponse toRestaurantNearbyResponse(Restaurant r, double userLat, double userLng) {
+                double distanceKm = haversine(userLat, userLng, r.getLatitude(), r.getLongitude());
+                return new RestaurantNearbyResponse(
+                                r.getId(), r.getName(), r.getDescription(), r.getPhone(),
+                                r.getAddressDetail(), r.getLongitude(), r.getLatitude(),
+                                r.getStar1(), r.getStar2(), r.getStar3(), r.getStar4(), r.getStar5(),
+                                r.getIsOpen(), r.getImageUrl(),
+                                Math.round(distanceKm * 100.0) / 100.0);
+        }
+
+        private double haversine(double lat1, double lng1, double lat2, double lng2) {
+                final double R = 6371.0;
+                double dLat = Math.toRadians(lat2 - lat1);
+                double dLng = Math.toRadians(lng2 - lng1);
+                double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                                                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         private RestaurantResponse toRestaurantResponse(Restaurant r) {

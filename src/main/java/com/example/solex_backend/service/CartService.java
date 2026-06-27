@@ -7,6 +7,7 @@ import com.example.solex_backend.domain.ProductVariant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.AddToCartRequest;
 import com.example.solex_backend.dto.response.CartItemResponse;
+import com.example.solex_backend.dto.response.CartResponse;
 import com.example.solex_backend.dto.response.ProductCartItemResponse;
 import com.example.solex_backend.dto.response.ProductResponse;
 import com.example.solex_backend.dto.response.ProductVariantResponse;
@@ -33,11 +34,17 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductVariantRepository productVariantRepository;
 
-    public List<CartItemResponse> getCartItems(User user) {
+    public CartResponse getCartItems(User user) {
         Cart cart = getOrCreateCart(user);
-        return cartItemRepository.findByCart(cart).stream()
+        List<CartItem> cartItems = cartItemRepository.findByCart(cart);
+        List<CartItemResponse> items = cartItems.stream()
                 .map(this::toCartItemResponse)
                 .collect(Collectors.toList());
+        if (cartItems.isEmpty()) {
+            return new CartResponse(null, null, null, items);
+        }
+        var restaurant = cartItems.get(0).getVariant().getProduct().getRestaurant();
+        return new CartResponse(restaurant.getId(), restaurant.getLatitude(), restaurant.getLongitude(), items);
     }
 
     public CartItemResponse addToCart(User user, AddToCartRequest request) {

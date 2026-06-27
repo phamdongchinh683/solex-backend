@@ -28,9 +28,9 @@ public class RatingService {
     private final RestaurantRepository restaurantRepository;
     private final OrderRepository orderRepository;
 
-    public RatingResponse rateRestaurant(Long restaurantId, User user, CreateRatingRequest request) {
-        Order order = orderRepository.findByIdAndUser(request.orderId(), user)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + request.orderId()));
+    public RatingResponse rateRestaurant(Long orderId, User user, CreateRatingRequest request) {
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
         if (!"DELIVERED".equals(order.getStatus())) {
             throw new BusinessException("Đơn hàng phải ở trạng thái ĐÃ GIAO trước khi đánh giá");
@@ -40,31 +40,20 @@ public class RatingService {
         }
 
         int newRating = validateRating(request.rating());
-        Restaurant restaurant = restaurantRepository.findByIdForUpdate(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+        Restaurant restaurant = restaurantRepository.findByIdForUpdate(order.getRestaurant().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
 
-        Rating rating = ratingRepository.findByRestaurantAndUser(restaurant, user)
-                .orElse(null);
-
-        if (rating == null) {
-            rating = Rating.builder()
-                    .restaurant(restaurant)
-                    .user(user)
-                    .rating(newRating)
-                    .comment(normalizeComment(request.comment()))
-                    .build();
-            updateStarCounter(restaurant, newRating, 1);
-        } else {
-            int oldRating = rating.getRating();
-            if (oldRating != newRating) {
-                updateStarCounter(restaurant, oldRating, -1);
-                updateStarCounter(restaurant, newRating, 1);
-            }
-            rating.setRating(newRating);
-            rating.setComment(normalizeComment(request.comment()));
-        }
+        Rating rating = Rating.builder()
+                .order(order)
+                .restaurant(restaurant)
+                .user(user)
+                .rating(newRating)
+                .comment(normalizeComment(request.comment()))
+                .build();
+        updateStarCounter(restaurant, newRating, 1);
 
         restaurantRepository.save(restaurant);
+                        
         Rating savedRating = ratingRepository.save(rating);
         orderRepository.markRated(order.getId());
         return toResponse(savedRating);

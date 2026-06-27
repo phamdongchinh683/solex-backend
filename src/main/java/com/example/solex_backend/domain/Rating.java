@@ -11,7 +11,7 @@ import org.hibernate.annotations.Check;
         @Index(name = "idx_rating_rating",         columnList = "rating"),
         @Index(name = "idx_rating_created_at",     columnList = "created_at")
 }, uniqueConstraints = {
-        @UniqueConstraint(name = "uk_ratings_restaurant_user", columnNames = {"restaurant_id", "user_id"})
+        @UniqueConstraint(name = "uk_ratings_order", columnNames = {"order_id"})
 })
 @Check(constraints = "rating between 1 and 5")
 @Getter
@@ -24,6 +24,10 @@ public class Rating extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_id", nullable = false)
