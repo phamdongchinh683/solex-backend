@@ -9,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
+
 @Component
 public class OpenRouteServiceClient {
 
@@ -19,8 +21,14 @@ public class OpenRouteServiceClient {
 
     public OpenRouteServiceClient(OpenRouteServiceConfig config) {
         this.apiKey = config.getApiKey();
-        this.restClient = RestClient.create();
-
+        this.restClient = RestClient.builder()
+                .baseUrl(DIRECTIONS_URL)
+                .requestFactory(new org.springframework.http.client.JdkClientHttpRequestFactory(
+                        java.net.http.HttpClient.newBuilder()
+                                .connectTimeout(Duration.ofSeconds(10))
+                                .build()
+                ))
+                .build();
     }
 
     public double getRouteDistanceKm(double startLng, double startLat, double endLng, double endLat) {
@@ -35,7 +43,7 @@ public class OpenRouteServiceClient {
 
         try {
             JsonNode root = restClient.post()
-                    .uri(DIRECTIONS_URL)
+                    .uri("")
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Accept", "application/json")
                     .contentType(MediaType.APPLICATION_JSON)

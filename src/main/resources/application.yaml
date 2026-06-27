@@ -15,6 +15,12 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-init-sql: "DEALLOCATE ALL"
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 30000
+      leak-detection-threshold: 60000
       data-source-properties:
         preparedStatementCacheQueries: 0
   sql:

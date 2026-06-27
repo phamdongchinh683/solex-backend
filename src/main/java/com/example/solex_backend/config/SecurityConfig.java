@@ -85,41 +85,45 @@ public class SecurityConfig {
                     FilterChain filterChain)
                     throws ServletException, IOException {
 
-                String authHeader = request.getHeader("Authorization");
+                try {
+                    String authHeader = request.getHeader("Authorization");
 
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    if (authHeader != null && authHeader.startsWith("Bearer ")) {
 
-                    String token = authHeader.substring(7);
+                        String token = authHeader.substring(7);
 
-                    if (jwtUtil.isTokenValid(token)) {
+                        if (jwtUtil.isTokenValid(token)) {
 
-                        Long userId = jwtUtil.extractUserId(token);
-                        String role = jwtUtil.extractRole(token);
-                        int tokenVersion = jwtUtil.extractTokenVersion(token);
+                            Long userId = jwtUtil.extractUserId(token);
+                            String role = jwtUtil.extractRole(token);
+                            int tokenVersion = jwtUtil.extractTokenVersion(token);
 
-                        var user = userRepository.findById(userId).orElse(null);
+                            var user = userRepository.findById(userId).orElse(null);
 
-                        if (user != null
-                                && user.getTokenVersion() == tokenVersion
-                                && Integer.valueOf(1).equals(user.getIsActive())) {
+                            if (user != null
+                                    && user.getTokenVersion() == tokenVersion
+                                    && Integer.valueOf(1).equals(user.getIsActive())) {
 
-                            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                    user,
-                                    null,
-                                    List.of(
-                                            new SimpleGrantedAuthority(
-                                                    "ROLE_" + role)));
+                                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                        user,
+                                        null,
+                                        List.of(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_" + role)));
 
-                            authentication.setDetails(token);
+                                authentication.setDetails(token);
 
-                            SecurityContextHolder
-                                    .getContext()
-                                    .setAuthentication(authentication);
+                                SecurityContextHolder
+                                        .getContext()
+                                        .setAuthentication(authentication);
+                            }
                         }
                     }
-                }
 
-                filterChain.doFilter(request, response);
+                    filterChain.doFilter(request, response);
+                } finally {
+                    SecurityContextHolder.clearContext();
+                }
             }
         };
     }
