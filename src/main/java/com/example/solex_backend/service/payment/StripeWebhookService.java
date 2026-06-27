@@ -3,7 +3,6 @@ package com.example.solex_backend.service.payment;
 import com.example.solex_backend.config.StripeConfig;
 import com.example.solex_backend.domain.Payment;
 import com.example.solex_backend.exception.BusinessException;
-import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.service.OrderStatusService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
@@ -38,25 +37,25 @@ public class StripeWebhookService {
                 PaymentIntent intent = deserializeIntent(event);
                 String transactionRef = intent.getMetadata().get("transactionRef");
                 log.info("Stripe payment succeeded: id={}", intent.getId());
-                try {
-                    Payment payment = paymentService.findByTransactionRef(transactionRef);
-                    paymentService.markSuccess(payment, intent.getId());
-                    orderStatusService.confirmOrderByPayment(payment.getOrder().getId());
-                } catch (ResourceNotFoundException e) {
-                    log.warn("Stripe payment_intent.succeeded received but no payment record found: ref={}, intentId={}", transactionRef, intent.getId());
-                }
+                paymentService.findOptionalByTransactionRef(transactionRef).ifPresentOrElse(
+                        payment -> {
+                            paymentService.markSuccess(payment, intent.getId());
+                            orderStatusService.confirmOrderByPayment(payment.getOrder().getId());
+                        },
+                        () -> log.warn("Stripe payment_intent.succeeded: no payment record found: ref={}, intentId={}", transactionRef, intent.getId())
+                );
             }
             case "payment_intent.payment_failed" -> {
                 PaymentIntent intent = deserializeIntent(event);
                 String transactionRef = intent.getMetadata().get("transactionRef");
                 log.info("Stripe payment failed: id={}", intent.getId());
-                try {
-                    Payment payment = paymentService.findByTransactionRef(transactionRef);
-                    paymentService.markFailed(payment, intent.getId());
-                    orderStatusService.cancelOrderByPayment(payment.getOrder().getId());
-                } catch (ResourceNotFoundException e) {
-                    log.warn("Stripe payment_intent.payment_failed received but no payment record found: ref={}, intentId={}", transactionRef, intent.getId());
-                }
+                paymentService.findOptionalByTransactionRef(transactionRef).ifPresentOrElse(
+                        payment -> {
+                            paymentService.markFailed(payment, intent.getId());
+                            orderStatusService.cancelOrderByPayment(payment.getOrder().getId());
+                        },
+                        () -> log.warn("Stripe payment_intent.payment_failed: no payment record found: ref={}, intentId={}", transactionRef, intent.getId())
+                );
             }
             default -> log.debug("Unhandled Stripe event: {}", event.getType());
         }
