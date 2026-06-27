@@ -16,14 +16,14 @@ public class ShippingService {
     }
 
     public ShippingFeeResponse calculateShippingFee(
-            double resraurantLong, double restaurantLat,
-            double userLong, double userLat) {
+            double restaurantLng, double restaurantLat,
+            double userLng, double userLat) {
 
-        double distanceKm = openRouteServiceClient.getRouteDistanceKm(
-                resraurantLong, restaurantLat, userLong, userLat);
+        OpenRouteServiceClient.RouteDetails route = openRouteServiceClient.getRouteDetails(
+                restaurantLng, restaurantLat, userLng, userLat);
 
-        double fee = BASE_FEE + (distanceKm * RATE_PER_KM);
+        double fee = BASE_FEE + (route.distanceKm() * RATE_PER_KM);
 
-        return new ShippingFeeResponse(distanceKm, fee);
+        return new ShippingFeeResponse(route.distanceKm(), fee, route.durationSeconds(), route.coordinates());
     }
 }

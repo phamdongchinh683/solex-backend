@@ -33,6 +33,17 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     @Query(value = """
         UPDATE cart_items SET quantity = quantity + :delta
         WHERE id = :itemId
+          AND cart_id IN (SELECT id FROM carts WHERE user_id = :userId)
+          AND quantity + :delta > 0
         """, nativeQuery = true)
-    int upsertQuantityByItemId(@Param("itemId") Long itemId, @Param("delta") int delta);
+    int adjustQuantity(@Param("itemId") Long itemId, @Param("delta") int delta, @Param("userId") Long userId);
+
+    @Modifying
+    @Query(value = """
+        DELETE FROM cart_items
+        WHERE id = :itemId
+          AND cart_id IN (SELECT id FROM carts WHERE user_id = :userId)
+          AND quantity + :delta <= 0
+        """, nativeQuery = true)
+    int deleteIfExhausted(@Param("itemId") Long itemId, @Param("delta") int delta, @Param("userId") Long userId);
 }

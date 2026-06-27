@@ -87,7 +87,7 @@ public class RestaurantService {
         }
 
         private RestaurantDetailResponse toRestaurantDetailResponse(Restaurant r) {
-                List<CategoryResponse> categories = categoryRepository.findByRestaurant_IdOrderByName(r.getId())
+                List<CategoryResponse> categories = categoryRepository.findSummariesByRestaurantId(r.getId())
                                 .stream()
                                 .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getImageUrl()))
                                 .toList();

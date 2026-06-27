@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;;
+    private final CategoryRepository categoryRepository;
     private final ProductVariantRepository productVariantRepository;
     private final RestaurantRepository restaurantRepository;
 

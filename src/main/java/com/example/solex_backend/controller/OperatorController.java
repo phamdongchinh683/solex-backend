@@ -46,11 +46,19 @@ public class OperatorController {
         return ApiResponse.ok("Thành công", authService.signupOperator(request));
     }
 
-    // ── Orders ────────────────────────────────────────────────────────────────
+    @Operation(summary = "Get orders of my restaurant with optional status filter, cursor, size")
+    @GetMapping("/orders")
+    public ApiResponse<SliceResponse<OrderResponse>> getOrders(
+            @AuthenticationPrincipal User operator,
+            @RequestParam(defaultValue = "9223372036854775807") Long cursor,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status) {
+        return ApiResponse.ok("Thành công", orderService.getOrdersByRestaurant(operator, cursor, size, status));
+    }
 
     @Operation(summary = "Get order detail (operator view)")
     @GetMapping("/orders/{id}")
-    public ApiResponse<OrderResponse> getOrder(@PathVariable Long id) {
+    public ApiResponse<OrderDetailResponse> getOrder(@PathVariable Long id) {
         return ApiResponse.ok("Thành công", orderService.getOrderForOperator(id));
     }
 
@@ -65,11 +73,11 @@ public class OperatorController {
 
     @Operation(summary = "Advance order to next status")
     @PutMapping("/orders/{id}/advance")
-    public ApiResponse<Void> advanceOrder(
+    public ApiResponse<String> advanceOrder(
             @AuthenticationPrincipal User operator,
             @PathVariable Long id) {
-        orderStatusService.advanceOrder(id, operator);
-        return ApiResponse.ok("Trạng thái đơn hàng đã được cập nhật", null);
+        String newStatus = orderStatusService.advanceOrder(id, operator);
+        return ApiResponse.ok("Trạng thái đơn hàng đã được cập nhật", newStatus);
     }
 
     @Operation(summary = "Cancel order")
@@ -130,7 +138,7 @@ public class OperatorController {
     @PatchMapping("/restaurant/status")
     public ApiResponse<Void> updateRestaurantStatus(
             @AuthenticationPrincipal User operator,
-            @RequestBody UpdateStatusRestaurantRequest request) {
+            @Valid @RequestBody UpdateStatusRestaurantRequest request) {
         restaurantService.updateIsOpenRestaurant(request.restaurantId(), operator, request.status());
         return ApiResponse.ok(request.status() ? "Nhà hàng đã mở cửa" : "Nhà hàng đã đóng cửa", null);
     }

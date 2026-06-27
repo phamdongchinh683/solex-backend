@@ -1,6 +1,6 @@
 package com.example.solex_backend.config;
 
-import com.example.solex_backend.repository.UserRepository;
+import com.example.solex_backend.service.UserCacheService;
 import com.example.solex_backend.util.Jwt;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,11 +33,11 @@ import java.util.List;
 public class SecurityConfig {
 
     private final Jwt jwtUtil;
-    private final UserRepository userRepository;
+    private final UserCacheService userCacheService;
 
-    public SecurityConfig(Jwt jwtUtil, UserRepository userRepository) {
+    public SecurityConfig(Jwt jwtUtil, UserCacheService userCacheService) {
         this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
+        this.userCacheService = userCacheService;
     }
 
     @Bean
@@ -98,7 +98,7 @@ public class SecurityConfig {
                             String role = jwtUtil.extractRole(token);
                             int tokenVersion = jwtUtil.extractTokenVersion(token);
 
-                            var user = userRepository.findById(userId).orElse(null);
+                            var user = userCacheService.getOrLoad(userId);
 
                             if (user != null
                                     && user.getTokenVersion() == tokenVersion

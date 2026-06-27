@@ -2,7 +2,7 @@ package com.example.solex_backend.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record ProductionCartItemResponse(
+public record ProductCartItemResponse(
         @Schema(description = "Product ID") Long id,
         @Schema(description = "Product name") String name,
         @Schema(description = "Product description") String description,

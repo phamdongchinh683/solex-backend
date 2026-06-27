@@ -2,8 +2,12 @@ package com.example.solex_backend.service;
 
 import com.example.solex_backend.domain.*;
 import com.example.solex_backend.dto.request.CreateOrderRequest;
+import com.example.solex_backend.dto.response.CartItemResponse;
+import com.example.solex_backend.dto.response.OrderDetailResponse;
 import com.example.solex_backend.dto.response.OrderItemResponse;
 import com.example.solex_backend.dto.response.OrderResponse;
+import com.example.solex_backend.dto.response.ProductCartItemResponse;
+import com.example.solex_backend.dto.response.ProductVariantResponse;
 import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
@@ -26,6 +30,7 @@ public class OrderService {
         private final CartItemRepository cartItemRepository;
         private final CartRepository cartRepository;
         private final AddressRepository addressRepository;
+        private final RestaurantRepository restaurantRepository;
         private final ShippingService shippingService;
         private final CouponService couponService;
 
@@ -38,7 +43,6 @@ public class OrderService {
                         throw new BusinessException("Giỏ hàng trống");
                 }
 
-                // Rule 1: findByIdAndUser replaces findById + manual ownership comparison
                 Address address = addressRepository.findByIdAndUser(request.addressId(), user)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Address not found: " + request.addressId()));
@@ -48,9 +52,11 @@ public class OrderService {
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 Restaurant restaurant = cartItems.get(0).getVariant().getProduct().getRestaurant();
+
                 double shippingFeeRaw = shippingService.calculateShippingFee(
-                                restaurant.getLatitude(), restaurant.getLongitude(),
-                                address.getLatitude(), address.getLongitude()).fee();
+                                restaurant.getLongitude(), restaurant.getLatitude(),
+                                address.getLongitude(), address.getLatitude()).fee();
+
                 BigDecimal shippingFee = BigDecimal.valueOf(shippingFeeRaw);
                 BigDecimal totalAmount = subtotal.add(shippingFee);
 
@@ -65,6 +71,8 @@ public class OrderService {
                                 .discountAmount(BigDecimal.ZERO)
                                 .totalAmount(totalAmount)
                                 .note(request.note())
+                                .rate(false)
+                                .restaurant(restaurant)
                                 .build();
                 orderRepository.save(order);
 
@@ -92,6 +100,38 @@ public class OrderService {
                 return toOrderResponse(order);
         }
 
+        public List<CartItemResponse> reorderFromOrder(User user, Long orderId) {
+                Order order = orderRepository.findByIdAndUser(orderId, user)
+                                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+                Cart cart = getOrCreateCart(user);
+
+                List<CartItem> existingItems = cartItemRepository.findByCart(cart);
+                if (!existingItems.isEmpty()) {
+                        Long existingRestaurantId = existingItems.get(0).getVariant().getProduct().getRestaurant()
+                                        .getId();
+                        Long orderRestaurantId = order.getRestaurant().getId();
+                        if (!existingRestaurantId.equals(orderRestaurantId)) {
+                                cartItemRepository.deleteAll(existingItems);
+                        }
+                }
+
+                for (OrderItem orderItem : order.getItems()) {
+                        ProductVariant variant = orderItem.getVariant();
+                        if (Boolean.TRUE.equals(variant.getIsActive())) {
+                                cartItemRepository.upsertQuantity(
+                                                cart.getId(),
+                                                variant.getId(),
+                                                orderItem.getQuantity(),
+                                                variant.getPrice());
+                        }
+                }
+
+                return cartItemRepository.findByCart(cart).stream()
+                                .map(this::toCartItemResponse)
+                                .collect(Collectors.toList());
+        }
+
         public SliceResponse<OrderResponse> getMyOrders(User user, Long cursor, int size) {
                 List<Order> result = orderRepository.findByUserBeforeCursor(user, cursor, PageRequest.of(0, size + 1));
                 boolean hasNext = result.size() > size;
@@ -100,16 +140,56 @@ public class OrderService {
                 return new SliceResponse<>(page.stream().map(this::toOrderResponse).toList(), nextCursor);
         }
 
-        public OrderResponse getOrderById(Long id, User user) {
-                Order order = orderRepository.findByIdAndUser(id, user)
-                                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
-                return toOrderResponse(order);
+        public SliceResponse<OrderResponse> getOrdersByRestaurant(User operator, Long cursor, int size, String status) {
+                Restaurant restaurant = restaurantRepository.findByOperator(operator)
+                                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for operator"));
+                List<Order> result = orderRepository.findByRestaurantBeforeCursor(restaurant.getId(), cursor, status,
+                                PageRequest.of(0, size + 1));
+                boolean hasNext = result.size() > size;
+                List<Order> page = hasNext ? result.subList(0, size) : result;
+                Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+                return new SliceResponse<>(page.stream().map(this::toOrderResponse).toList(), nextCursor);
         }
 
-        public OrderResponse getOrderForOperator(Long id) {
+        public OrderDetailResponse getOrderById(Long id, User user) {
+                Order order = orderRepository.findByIdAndUser(id, user)
+                                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+                return toOrderDetailResponse(order);
+        }
+
+        public OrderDetailResponse getOrderForOperator(Long id) {
                 Order order = orderRepository.findByIdWithItems(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
-                return toOrderResponse(order);
+                return toOrderDetailResponse(order);
+        }
+
+        private Cart getOrCreateCart(User user) {
+                return cartRepository.findByUser(user)
+                                .orElseGet(() -> {
+                                        Cart cart = new Cart();
+                                        cart.setUser(user);
+                                        return cartRepository.save(cart);
+                                });
+        }
+
+        private CartItemResponse toCartItemResponse(CartItem item) {
+                ProductVariant variant = item.getVariant();
+                return new CartItemResponse(
+                                item.getId(),
+                                item.getQuantity(),
+                                new ProductCartItemResponse(
+                                                variant.getProduct().getId(),
+                                                variant.getProduct().getName(),
+                                                variant.getProduct().getDescription(),
+                                                variant.getProduct().getImage(),
+                                                new ProductVariantResponse(
+                                                                variant.getId(),
+                                                                variant.getSku(),
+                                                                variant.getPrice(),
+                                                                variant.getImage(),
+                                                                variant.getSize(),
+                                                                variant.getName(),
+                                                                variant.getIsActive())));
         }
 
         private String generateOrderCode() {
@@ -117,6 +197,19 @@ public class OrderService {
         }
 
         private OrderResponse toOrderResponse(Order order) {
+                return new OrderResponse(
+                                order.getId(),
+                                order.getOrderCode(),
+                                order.getStatus(),
+                                order.getSubtotal(),
+                                order.getShippingFee(),
+                                order.getDiscountAmount(),
+                                order.getTotalAmount(),
+                                order.getNote(),
+                                order.getCreatedAt());
+        }
+
+        private OrderDetailResponse toOrderDetailResponse(Order order) {
                 List<OrderItemResponse> items = order.getItems().stream()
                                 .map(item -> new OrderItemResponse(
                                                 item.getId(),
@@ -127,7 +220,7 @@ public class OrderService {
                                                 item.getUnitPrice().multiply(new BigDecimal(item.getQuantity()))))
                                 .collect(Collectors.toList());
 
-                return new OrderResponse(
+                return new OrderDetailResponse(
                                 order.getId(),
                                 order.getOrderCode(),
                                 order.getStatus(),

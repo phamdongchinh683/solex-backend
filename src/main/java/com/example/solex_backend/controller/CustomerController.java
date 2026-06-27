@@ -57,7 +57,7 @@ public class CustomerController {
     @PutMapping("/profile")
     public ApiResponse<UserInfoResponse> updateProfile(
             @AuthenticationPrincipal User user,
-            @RequestBody UpdateProfileRequest request) {
+            @Valid @RequestBody UpdateProfileRequest request) {
         return ApiResponse.ok("Cập nhật hồ sơ thành công", customerService.updateProfile(user, request));
     }
 
@@ -256,10 +256,18 @@ public class CustomerController {
 
     @Operation(summary = "Get order detail")
     @GetMapping("/orders/{orderId}")
-    public ApiResponse<OrderResponse> getOrder(
+    public ApiResponse<OrderDetailResponse> getOrder(
             @PathVariable Long orderId,
             @AuthenticationPrincipal User user) {
         return ApiResponse.ok("Thành công", orderService.getOrderById(orderId, user));
+    }
+
+    @Operation(summary = "Reorder — copy all items from a previous order into current cart")
+    @PostMapping("/orders/{orderId}/reorder")
+    public ApiResponse<List<CartItemResponse>> reorder(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal User user) {
+        return ApiResponse.ok("Thêm vào giỏ hàng thành công", orderService.reorderFromOrder(user, orderId));
     }
 
     @Operation(summary = "Calculate shipping fee")

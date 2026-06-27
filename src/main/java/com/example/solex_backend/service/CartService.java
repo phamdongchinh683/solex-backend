@@ -7,9 +7,9 @@ import com.example.solex_backend.domain.ProductVariant;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.request.AddToCartRequest;
 import com.example.solex_backend.dto.response.CartItemResponse;
+import com.example.solex_backend.dto.response.ProductCartItemResponse;
 import com.example.solex_backend.dto.response.ProductResponse;
 import com.example.solex_backend.dto.response.ProductVariantResponse;
-import com.example.solex_backend.dto.response.ProductionCartItemResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.ProductVariantRepository;
@@ -71,22 +71,22 @@ public class CartService {
             throw new BusinessException("Hành động không hợp lệ. Vui lòng sử dụng '+' hoặc '-'");
         }
 
-        CartItem item = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
-
-        if (!item.getCart().getUser().getId().equals(user.getId())) {
-            throw new BusinessException("Bạn không có quyền cập nhật sản phẩm này trong giỏ hàng");
-        }
-
         int delta = action.equals("+") ? 1 : -1;
-        int nextQuantity = item.getQuantity() + delta;
-        if (nextQuantity <= 0) {
-            cartItemRepository.delete(item);
+
+        if (delta < 0 && cartItemRepository.deleteIfExhausted(cartItemId, delta, user.getId()) > 0) {
             return null;
         }
 
-        item.setQuantity(nextQuantity);
-        cartItemRepository.save(item);
+        int updated = cartItemRepository.adjustQuantity(cartItemId, delta, user.getId());
+        if (updated == 0) {
+            if (!cartItemRepository.existsById(cartItemId)) {
+                throw new ResourceNotFoundException("Cart item not found: " + cartItemId);
+            }
+            throw new BusinessException("Bạn không có quyền cập nhật sản phẩm này trong giỏ hàng");
+        }
+
+        CartItem item = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
         return toCartItemResponse(item);
     }
 
@@ -110,7 +110,7 @@ public class CartService {
 
     private CartItemResponse toCartItemResponse(CartItem item) {
         ProductVariant variant = item.getVariant();
-        ProductionCartItemResponse product = new ProductionCartItemResponse(
+        ProductCartItemResponse product = new ProductCartItemResponse(
                 variant.getProduct().getId(),
                 variant.getProduct().getName(),
                 variant.getProduct().getDescription(),

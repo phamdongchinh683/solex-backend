@@ -38,7 +38,7 @@ public class AuthController {
 
     @Operation(summary = "Send OTP code")
     @PostMapping("/otp/send")
-    public ApiResponse<AuthResponse> sendOtp(@RequestBody SendOtpRequest request) {
+    public ApiResponse<AuthResponse> sendOtp(@Valid @RequestBody SendOtpRequest request) {
         otpService.sendOtp(request);
         return ApiResponse.ok("OTP đã được gửi", null);
     }

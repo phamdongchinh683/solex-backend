@@ -19,6 +19,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.id = :id")
     Optional<Order> findByIdWithItems(@Param("id") Long id);
 
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.restaurant.id = :restaurantId AND o.id < :cursor AND (:status IS NULL OR o.status = :status) ORDER BY o.id DESC")
+    List<Order> findByRestaurantBeforeCursor(@Param("restaurantId") Long restaurantId, @Param("cursor") Long cursor, @Param("status") String status, Pageable pageable);
+
     @Modifying
     @Query("UPDATE Order o SET o.rate = true WHERE o.id = :id")
     void markRated(@Param("id") Long id);

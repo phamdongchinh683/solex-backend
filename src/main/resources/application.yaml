@@ -34,6 +34,10 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: 3155760000000
@@ -59,6 +63,11 @@ vnpay:
 
 openroute-service:
   api-key: ${OPENROUTE_API_KEY:}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
 
 springdoc:
   swagger-ui:

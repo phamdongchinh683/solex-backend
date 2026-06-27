@@ -5,7 +5,6 @@ import com.example.solex_backend.domain.OrderStatusHistory;
 import com.example.solex_backend.domain.User;
 import com.example.solex_backend.domain.state.OrderState;
 import com.example.solex_backend.domain.state.OrderStateFactory;
-import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.OrderRepository;
 import com.example.solex_backend.repository.OrderStatusHistoryRepository;
@@ -27,10 +26,11 @@ public class OrderStatusService {
         updateStatus(order, newState, operator, "Order confirmed");
     }
 
-    public void advanceOrder(Long orderId, User operator) {
+    public String advanceOrder(Long orderId, User operator) {
         Order order = getOrderOrThrow(orderId);
         OrderState newState = OrderStateFactory.fromString(order.getStatus()).nextStep();
         updateStatus(order, newState, operator, "Order advanced to next step");
+        return newState.status();
     }
 
     public void cancelOrder(Long orderId, User operator, String reason) {

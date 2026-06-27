@@ -17,6 +17,7 @@ import com.example.solex_backend.repository.UserRepository;
 import com.example.solex_backend.util.Enums;
 import com.example.solex_backend.util.Jwt;
 import lombok.RequiredArgsConstructor;
+import com.example.solex_backend.service.UserCacheService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final Jwt jwt;
     private final OtpService otpService;
+    private final UserCacheService userCacheService;
 
     private static final long CONTACT_CHANGE_COOLDOWN_HOURS = 24;
 
@@ -117,6 +119,7 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException("Không tìm thấy người dùng"));
         user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
+        userCacheService.evict(userId);
     }
 
     public User updateContact(User user, UpdateContactRequest request) {
@@ -165,6 +168,7 @@ public class AuthService {
         userOtp.setExpiresAt(null);
         userOtpRepository.save(userOtp);
         User userUpdated = userRepository.save(user);
+        userCacheService.evict(userUpdated.getId());
         return userUpdated;
     }
 
@@ -193,6 +197,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
+        userCacheService.evict(user.getId());
 
         userOtp.setOtp(null);
         userOtp.setExpiresAt(null);

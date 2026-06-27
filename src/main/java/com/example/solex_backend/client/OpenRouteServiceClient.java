@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class OpenRouteServiceClient {
@@ -19,6 +21,8 @@ public class OpenRouteServiceClient {
     private final String apiKey;
     private final RestClient restClient;
 
+    public record RouteDetails(double distanceKm, double durationSeconds, List<List<Double>> coordinates) {}
+
     public OpenRouteServiceClient(OpenRouteServiceConfig config) {
         this.apiKey = config.getApiKey();
         this.restClient = RestClient.builder()
@@ -26,12 +30,11 @@ public class OpenRouteServiceClient {
                 .requestFactory(new org.springframework.http.client.JdkClientHttpRequestFactory(
                         java.net.http.HttpClient.newBuilder()
                                 .connectTimeout(Duration.ofSeconds(10))
-                                .build()
-                ))
+                                .build()))
                 .build();
     }
 
-    public double getRouteDistanceKm(double startLng, double startLat, double endLng, double endLat) {
+    public RouteDetails getRouteDetails(double startLng, double startLat, double endLng, double endLat) {
         String body = """
                 {
                   "coordinates": [
@@ -59,12 +62,14 @@ public class OpenRouteServiceClient {
                 throw new IllegalStateException("ORS: invalid response - missing routes");
             }
 
-            JsonNode summary = root.get("routes").get(0).get("summary");
-            if (summary == null || !summary.has("distance")) {
-                throw new IllegalStateException("ORS: missing distance in summary");
-            }
+            JsonNode route = root.get("routes").get(0);
+            JsonNode summary = route.get("summary");
+            double distanceKm = summary.get("distance").asDouble() / 1000.0;
+            double durationSeconds = summary.get("duration").asDouble();
 
-            return summary.get("distance").asDouble() / 1000.0;
+            List<List<Double>> coordinates = decodePolyline(route.get("geometry").asText());
+
+            return new RouteDetails(distanceKm, durationSeconds, coordinates);
 
         } catch (IllegalStateException e) {
             throw e;
@@ -74,4 +79,32 @@ public class OpenRouteServiceClient {
         }
     }
 
+    private List<List<Double>> decodePolyline(String encoded) {
+        List<List<Double>> result = new ArrayList<>();
+        int index = 0;
+        int lat = 0, lng = 0;
+
+        while (index < encoded.length()) {
+            int shift = 0, value = 0, b;
+            do {
+                b = encoded.charAt(index++) - 63;
+                value |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            lat += ((value & 1) != 0 ? ~(value >> 1) : (value >> 1));
+
+            shift = 0;
+            value = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                value |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            lng += ((value & 1) != 0 ? ~(value >> 1) : (value >> 1));
+
+            result.add(List.of(lng / 1e5, lat / 1e5));
+        }
+
+        return result;
+    }
 }
