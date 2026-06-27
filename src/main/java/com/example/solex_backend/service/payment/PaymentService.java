@@ -63,7 +63,7 @@ public class PaymentService {
                 .commissionAmount(commissionAmount)
                 .transactionRef(transactionRef)
                 .build();
-        paymentRepository.saveAndFlush(payment);
+        payment = paymentRepository.saveAndFlush(payment);
 
         PaymentStrategy strategy = strategies.stream()
                 .filter(s -> s.supports(request.method()))
