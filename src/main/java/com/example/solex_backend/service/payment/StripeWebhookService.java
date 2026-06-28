@@ -35,19 +35,19 @@ public class StripeWebhookService {
         switch (event.getType()) {
             case "payment_intent.succeeded" -> {
                 PaymentIntent intent = deserializeIntent(event);
-                String transactionRef = intent.getMetadata().get("transactionRef");
+                String transactionRef = intent.getId();
                 log.info("Stripe payment succeeded: id={}", intent.getId());
                 paymentService.findOptionalByTransactionRef(transactionRef).ifPresentOrElse(
                         payment -> {
                             paymentService.markSuccess(payment);
                             orderStatusService.confirmOrderByPayment(payment.getOrder().getId());
                         },
-                        () -> log.warn("Stripe payment_intent.succeeded: no payment record found: ref={}, intentId={}",
-                                transactionRef, intent.getId()));
+                        () -> log.warn("Stripe payment_intent.succeeded: no payment record found: intentId={}",
+                                intent.getId()));
             }
             case "payment_intent.payment_failed" -> {
                 PaymentIntent intent = deserializeIntent(event);
-                String transactionRef = intent.getMetadata().get("transactionRef");
+                String transactionRef = intent.getId();
                 log.info("Stripe payment failed: id={}", intent.getId());
                 paymentService.findOptionalByTransactionRef(transactionRef).ifPresentOrElse(
                         payment -> {
@@ -55,8 +55,8 @@ public class StripeWebhookService {
                             orderStatusService.cancelOrderByPayment(payment.getOrder().getId());
                         },
                         () -> log.warn(
-                                "Stripe payment_intent.payment_failed: no payment record found: ref={}, intentId={}",
-                                transactionRef, intent.getId()));
+                                "Stripe payment_intent.payment_failed: no payment record found: intentId={}",
+                                intent.getId()));
             }
             default -> log.debug("Unhandled Stripe event: {}", event.getType());
         }
