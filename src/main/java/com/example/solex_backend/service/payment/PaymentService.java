@@ -68,7 +68,8 @@ public class PaymentService {
         PaymentStrategy strategy = strategies.stream()
                 .filter(s -> s.supports(request.method()))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("Phương thức thanh toán không được hỗ trợ: " + request.method()));
+                .orElseThrow(
+                        () -> new BusinessException("Phương thức thanh toán không được hỗ trợ: " + request.method()));
 
         PaymentInitResult result = strategy.initiate(order, payment, clientIp);
 
@@ -83,8 +84,7 @@ public class PaymentService {
                 result.clientSecret(),
                 result.redirectUrl(),
                 request.method().name(),
-                order.getTotalAmount()
-        );
+                order.getTotalAmount());
     }
 
     public PaymentResponse getPaymentById(Long id, User user) {
@@ -105,16 +105,14 @@ public class PaymentService {
         return paymentRepository.findByTransactionRef(ref);
     }
 
-    public void markSuccess(Payment payment, String gatewayResponse) {
+    public void markSuccess(Payment payment) {
         payment.setStatus(PaymentStatus.SUCCESS.name());
-        payment.setGatewayResponse(gatewayResponse);
         payment.setPaidAt(LocalDateTime.now());
         paymentRepository.save(payment);
     }
 
-    public void markFailed(Payment payment, String gatewayResponse) {
+    public void markFailed(Payment payment) {
         payment.setStatus(PaymentStatus.FAILED.name());
-        payment.setGatewayResponse(gatewayResponse);
         paymentRepository.save(payment);
     }
 
@@ -128,7 +126,6 @@ public class PaymentService {
                 p.getCommissionAmount(),
                 p.getTransactionRef(),
                 p.getPaidAt(),
-                p.getCreatedAt()
-        );
+                p.getCreatedAt());
     }
 }

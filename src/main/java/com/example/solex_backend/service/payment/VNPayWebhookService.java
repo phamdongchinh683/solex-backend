@@ -43,11 +43,11 @@ public class VNPayWebhookService {
 
         if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
             log.info("VNPay payment succeeded: txnRef={}", txnRef);
-            paymentService.markSuccess(payment, responseCode);
+            paymentService.markSuccess(payment);
             orderStatusService.confirmOrderByPayment(payment.getOrder().getId());
         } else {
             log.info("VNPay payment failed: txnRef={}, code={}", txnRef, responseCode);
-            paymentService.markFailed(payment, responseCode);
+            paymentService.markFailed(payment);
             orderStatusService.cancelOrderByPayment(payment.getOrder().getId());
         }
 
@@ -64,7 +64,6 @@ public class VNPayWebhookService {
         return Map.of(
                 "status", payment.getStatus(),
                 "orderCode", payment.getOrder().getOrderCode(),
-                "amount", payment.getAmount().toPlainString()
-        );
+                "amount", payment.getAmount().toPlainString());
     }
 }
