@@ -62,8 +62,6 @@ public class SecurityConfig {
                                 "/api/v1/auth/contact/check",
                                 "/api/v1/auth/otp/verify",
                                 "/api/v1/payments/stripe/webhook",
-                                "/api/v1/payments/vnpay/ipn",
-                                "/api/v1/payments/vnpay/return",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/api-docs/**",

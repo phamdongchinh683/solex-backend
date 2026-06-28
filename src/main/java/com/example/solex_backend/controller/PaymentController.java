@@ -7,7 +7,6 @@ import com.example.solex_backend.dto.response.PaymentIntentResponse;
 import com.example.solex_backend.dto.response.PaymentResponse;
 import com.example.solex_backend.service.payment.PaymentService;
 import com.example.solex_backend.service.payment.StripeWebhookService;
-import com.example.solex_backend.service.payment.VNPayWebhookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,9 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
-@Tag(name = "Payments", description = "Payment processing — Stripe and VNPay")
+@Tag(name = "Payments", description = "Payment processing — Stripe")
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
@@ -29,9 +26,8 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final StripeWebhookService stripeWebhookService;
-    private final VNPayWebhookService vnPayWebhookService;
 
-    @Operation(summary = "Initiate payment — returns clientSecret (Stripe) or redirectUrl (VNPay)")
+    @Operation(summary = "Initiate payment — returns clientSecret (Stripe)")
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -59,18 +55,6 @@ public class PaymentController {
             @RequestHeader("Stripe-Signature") String sigHeader) {
         stripeWebhookService.handleWebhook(payload, sigHeader);
         return ResponseEntity.ok("OK");
-    }
-
-    @Operation(summary = "VNPay IPN — server-to-server callback from VNPay, no JWT required")
-    @GetMapping("/vnpay/ipn")
-    public ResponseEntity<Map<String, String>> vnpayIpn(@RequestParam Map<String, String> params) {
-        return ResponseEntity.ok(vnPayWebhookService.handleIpn(params));
-    }
-
-    @Operation(summary = "VNPay return")
-    @GetMapping("/vnpay/return")
-    public ApiResponse<Map<String, String>> vnpayReturn(@RequestParam Map<String, String> params) {
-        return ApiResponse.ok("Thành công", vnPayWebhookService.handleReturn(params));
     }
 
     private String getClientIp(HttpServletRequest request) {

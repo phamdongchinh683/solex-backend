@@ -9,7 +9,7 @@ public record CreatePaymentRequest(
         @NotNull(message = "Order ID is required")
         Long orderId,
 
-        @Schema(description = "Payment method: STRIPE or VNPAY")
+        @Schema(description = "Payment method: STRIPE or COD")
         @NotNull(message = "Payment method is required")
         PaymentMethod method
 ) {}

@@ -16,7 +16,7 @@ public final class Enums {
     }
 
     public enum PaymentMethod {
-        STRIPE, VNPAY, COD
+        STRIPE, COD
     }
 
     public enum PaymentStatus {
