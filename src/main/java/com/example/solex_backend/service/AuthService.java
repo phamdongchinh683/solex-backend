@@ -2,16 +2,20 @@ package com.example.solex_backend.service;
 
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
+import com.example.solex_backend.domain.UserDevice;
 import com.example.solex_backend.domain.UserOtp;
 import com.example.solex_backend.dto.request.LoginRequest;
 import com.example.solex_backend.dto.request.OperatorSignupRequest;
+import com.example.solex_backend.dto.request.RegisterDeviceRequest;
 import com.example.solex_backend.dto.request.ResetPasswordRequest;
 import com.example.solex_backend.dto.request.SignupRequest;
 import com.example.solex_backend.dto.request.UpdateContactRequest;
 import com.example.solex_backend.dto.response.AuthResponse;
+import com.example.solex_backend.dto.response.DeviceResponse;
 import com.example.solex_backend.dto.response.UserInfoResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.repository.RestaurantRepository;
+import com.example.solex_backend.repository.UserDeviceRepository;
 import com.example.solex_backend.repository.UserOtpRepository;
 import com.example.solex_backend.repository.UserRepository;
 import com.example.solex_backend.util.Enums;
@@ -23,6 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +38,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserOtpRepository userOtpRepository;
+    private final UserDeviceRepository userDeviceRepository;
     private final PasswordEncoder passwordEncoder;
     private final Jwt jwt;
     private final OtpService otpService;
@@ -111,15 +118,32 @@ public class AuthService {
         return new AuthResponse(token, toUserInfoResponse(user));
     }
 
-    public void logout() {
+    public void logout(String fcmToken) {
         String token = (String) org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication().getDetails();
         Long userId = jwt.extractUserId(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy người dùng"));
+
+        if (fcmToken != null && !fcmToken.isBlank()) {
+            userDeviceRepository.findByUserAndFcmToken(user, fcmToken)
+                    .ifPresent(userDeviceRepository::delete);
+        }
+
         user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
         userCacheService.evict(userId);
+    }
+
+    public List<DeviceResponse> getDevices(User user) {
+        return userDeviceRepository.findByUserOrderByCreatedAtDesc(user).stream()
+                .map(d -> new DeviceResponse(
+                        d.getId(), d.getFcmToken(), d.getDeviceOs()))
+                .toList();
+    }
+
+    public void registerDevice(User user, RegisterDeviceRequest request) {
+        userDeviceRepository.upsertDevice(user.getId(), request.token(), request.deviceOs().name());
     }
 
     public User updateContact(User user, UpdateContactRequest request) {
@@ -144,7 +168,8 @@ public class AuthService {
             case EMAIL -> userOtpRepository.findByEmail(request.value())
                     .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho email này — hãy gửi OTP trước"));
             case PHONE -> userOtpRepository.findByPhone(request.value())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho số điện thoại này — hãy gửi OTP trước"));
+                    .orElseThrow(() -> new BusinessException(
+                            "Không tìm thấy OTP cho số điện thoại này — hãy gửi OTP trước"));
         };
 
         if (userOtp.getExpiresAt() == null || userOtp.getExpiresAt().isBefore(now)) {
@@ -177,7 +202,8 @@ public class AuthService {
             case EMAIL -> userOtpRepository.findByEmail(request.value())
                     .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho email này — hãy gửi OTP trước"));
             case PHONE -> userOtpRepository.findByPhone(request.value())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho số điện thoại này — hãy gửi OTP trước"));
+                    .orElseThrow(() -> new BusinessException(
+                            "Không tìm thấy OTP cho số điện thoại này — hãy gửi OTP trước"));
         };
 
         if (userOtp.getExpiresAt() == null || userOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -202,6 +228,12 @@ public class AuthService {
         userOtp.setOtp(null);
         userOtp.setExpiresAt(null);
         userOtpRepository.save(userOtp);
+    }
+
+    public void updateFcmToken(User user, String token) {
+        user.setFcmToken(token);
+        userRepository.save(user);
+        userCacheService.evict(user.getId());
     }
 
     public AuthResponse login(LoginRequest request) {

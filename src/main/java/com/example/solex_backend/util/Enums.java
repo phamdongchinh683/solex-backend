@@ -27,4 +27,8 @@ public final class Enums {
         PERCENTAGE, FIXED_AMOUNT
     }
 
+    public enum DeviceOs {
+        IOS, ANDROID, WEB
+    }
+
 }

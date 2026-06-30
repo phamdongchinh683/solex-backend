@@ -57,4 +57,7 @@ public class User extends BaseEntity {
 
     @Column(name = "last_change_phone")
     private LocalDateTime lastChangePhone;
+
+    @Column(name = "fcm_token", length = 500)
+    private String fcmToken;
 }

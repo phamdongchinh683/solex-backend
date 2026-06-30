@@ -8,6 +8,7 @@ import com.example.solex_backend.domain.state.OrderStateFactory;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.OrderRepository;
 import com.example.solex_backend.repository.OrderStatusHistoryRepository;
+import com.example.solex_backend.service.notification.NotificationPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ public class OrderStatusService {
 
     private final OrderRepository orderRepository;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final NotificationPort notificationPort;
 
     public void confirmOrder(Long orderId, User operator) {
         Order order = getOrderOrThrow(orderId);
@@ -74,5 +76,11 @@ public class OrderStatusService {
                 .changedBy(changedBy)
                 .build();
         orderStatusHistoryRepository.save(history);
+
+        User customer = order.getUser();
+        if (customer != null && customer.getFcmToken() != null) {
+            notificationPort.notifyOrderStatusToCustomer(
+                    customer.getFcmToken(), order.getOrderCode(), newStatus);
+        }
     }
 }

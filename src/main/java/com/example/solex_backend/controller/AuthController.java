@@ -4,11 +4,15 @@ import com.example.solex_backend.domain.User;
 import com.example.solex_backend.dto.ApiResponse;
 import com.example.solex_backend.dto.request.ContactCheckRequest;
 import com.example.solex_backend.dto.request.LoginRequest;
+import com.example.solex_backend.dto.request.LogoutRequest;
+import com.example.solex_backend.dto.request.RegisterDeviceRequest;
 import com.example.solex_backend.dto.request.ResetPasswordRequest;
 import com.example.solex_backend.dto.request.SendOtpRequest;
 import com.example.solex_backend.dto.request.UpdateContactRequest;
+import com.example.solex_backend.dto.request.UpdateFcmTokenRequest;
 import com.example.solex_backend.dto.request.VerifyOtpRequest;
 import com.example.solex_backend.dto.response.AuthResponse;
+import com.example.solex_backend.dto.response.DeviceResponse;
 import com.example.solex_backend.service.AuthService;
 import com.example.solex_backend.service.OtpService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "Auth", description = "Authentication endpoints")
 @RestController
@@ -74,12 +80,31 @@ public class AuthController {
         return ApiResponse.ok("Đặt lại mật khẩu thành công", null);
     }
 
-    @Operation(summary = "Logout and invalidate current token")
+    @Operation(summary = "Logout and invalidate current token, optionally delete device FCM token")
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/logout")
-    public ApiResponse<Void> logout() {
-        authService.logout();
+    public ApiResponse<Void> logout(@Valid @RequestBody(required = false) LogoutRequest request) {
+        String fcmToken = request != null ? request.fcmToken() : null;
+        authService.logout(fcmToken);
         return ApiResponse.ok("Đăng xuất thành công", null);
+    }
+
+    @Operation(summary = "Get list of registered devices")
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/devices")
+    public ApiResponse<List<DeviceResponse>> getDevices(@AuthenticationPrincipal User user) {
+        List<DeviceResponse> devices = authService.getDevices(user);
+        return ApiResponse.ok("Danh sách thiết bị", devices);
+    }
+
+    @Operation(summary = "Register or update device FCM token with OS info")
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/devices")
+    public ApiResponse<Void> registerDevice(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody RegisterDeviceRequest request) {
+        authService.registerDevice(user, request);
+        return ApiResponse.ok("Thiết bị đã được đăng ký", null);
     }
 
 }

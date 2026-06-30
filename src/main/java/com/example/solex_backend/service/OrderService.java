@@ -12,6 +12,7 @@ import com.example.solex_backend.dto.response.SliceResponse;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.*;
+import com.example.solex_backend.service.notification.NotificationPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class OrderService {
         private final PaymentRepository paymentRepository;
         private final ShippingService shippingService;
         private final CouponService couponService;
+        private final NotificationPort notificationPort;
 
         public OrderResponse createOrder(User user, CreateOrderRequest request) {
                 Cart cart = cartRepository.findByUser(user)
@@ -96,6 +98,12 @@ public class OrderService {
 
                 if (request.couponId() != null) {
                         couponService.applyToOrder(request.couponId(), order);
+                }
+
+                User operator = restaurant.getOperator();
+                if (operator != null && operator.getFcmToken() != null) {
+                        notificationPort.notifyNewOrderToRestaurant(
+                                operator.getFcmToken(), order.getId(), order.getOrderCode());
                 }
 
                 return toOrderResponse(order);

@@ -38,6 +38,11 @@ spring:
     redis:
       url: ${REDIS_URL:}
 
+  rabbitmq:
+    addresses: ${RABBITMQ_URL:}
+  ssl: 
+    enable: true
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: 3155760000000
@@ -72,3 +77,6 @@ cloudinary:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+firebase:
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
