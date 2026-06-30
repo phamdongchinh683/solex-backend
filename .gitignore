@@ -34,3 +34,6 @@ build/
 
 ### Environment ###
 .env
+
+### Firebase credentials ###
+*.json
