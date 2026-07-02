@@ -62,11 +62,11 @@ public class CouponService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
 
         if (request.expiryDate().isBefore(request.startDate())) {
-            throw new BusinessException("Ngày hết hạn phải sau ngày bắt đầu");
+            throw new BusinessException("Expiry date must be after start date");
         }
 
         if (couponRepository.findByCode(request.code()).isPresent()) {
-            throw new BusinessException("Mã giảm giá đã tồn tại: " + request.code());
+            throw new BusinessException("Coupon code already exists: " + request.code());
         }
 
         Coupon coupon = Coupon.builder()
@@ -126,26 +126,26 @@ public class CouponService {
 
     private void validateCoupon(Coupon coupon, Order order) {
         if (!Boolean.TRUE.equals(coupon.getIsActive())) {
-            throw new BusinessException("Mã giảm giá không hoạt động");
+            throw new BusinessException("Coupon is not active");
         }
 
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(coupon.getStartDate()) || now.isAfter(coupon.getExpiryDate())) {
-            throw new BusinessException("Mã giảm giá đã hết hạn hoặc chưa có hiệu lực");
+            throw new BusinessException("Coupon has expired or is not yet valid");
         }
 
         if (coupon.getUsageLimit() != null && coupon.getUsageCount() >= coupon.getUsageLimit()) {
-            throw new BusinessException("Mã giảm giá đã đạt giới hạn sử dụng");
+            throw new BusinessException("Coupon usage limit reached");
         }
 
         if (coupon.getMinOrderAmount() != null
                 && order.getSubtotal().compareTo(coupon.getMinOrderAmount()) < 0) {
             throw new BusinessException(
-                    "Tổng tiền đơn hàng chưa đạt giá trị tối thiểu " + coupon.getMinOrderAmount());
+                    "Order subtotal does not meet minimum amount of " + coupon.getMinOrderAmount());
         }
 
         if (order.getCoupon() != null) {
-            throw new BusinessException("Mã giảm giá đã được áp dụng cho đơn hàng này");
+            throw new BusinessException("Coupon has already been applied to this order");
         }
     }
 
@@ -159,7 +159,7 @@ public class CouponService {
             coupon = couponRepository.findByCode(couponCode.toUpperCase())
                     .orElseThrow(() -> new ResourceNotFoundException("Coupon not found: " + couponCode));
         } else {
-            throw new BusinessException("Vui lòng cung cấp couponId hoặc couponCode");
+            throw new BusinessException("Please provide couponId or couponCode");
         }
 
         StringBuilder message = new StringBuilder();
@@ -167,26 +167,26 @@ public class CouponService {
 
         // Check active
         if (!Boolean.TRUE.equals(coupon.getIsActive())) {
-            message.append("Mã giảm giá không hoạt động. ");
+            message.append("Coupon is not active. ");
             isValid = false;
         }
 
         // Check expiry
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(coupon.getStartDate()) || now.isAfter(coupon.getExpiryDate())) {
-            message.append("Mã giảm giá đã hết hạn hoặc chưa có hiệu lực. ");
+            message.append("Coupon has expired or is not yet valid. ");
             isValid = false;
         }
 
         // Check usage limit
         if (coupon.getUsageLimit() != null && coupon.getUsageCount() >= coupon.getUsageLimit()) {
-            message.append("Mã giảm giá đã đạt giới hạn sử dụng. ");
+            message.append("Coupon usage limit reached. ");
             isValid = false;
         }
 
         // Check min order amount
         if (coupon.getMinOrderAmount() != null && subtotal.compareTo(coupon.getMinOrderAmount()) < 0) {
-            message.append("Tổng tiền đơn hàng chưa đạt giá trị tối thiểu " + coupon.getMinOrderAmount() + ". ");
+            message.append("Order subtotal does not meet minimum amount of " + coupon.getMinOrderAmount() + ". ");
             isValid = false;
         }
 
@@ -194,7 +194,7 @@ public class CouponService {
         BigDecimal finalAmount = subtotal.subtract(discountAmount).max(BigDecimal.ZERO);
 
         if (isValid && message.isEmpty()) {
-            message.append("Mã giảm giá hợp lệ");
+            message.append("Coupon is valid");
         }
 
         return new CouponCheckResponse(

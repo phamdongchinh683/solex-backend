@@ -15,8 +15,8 @@ public class FirebaseNotificationAdapter {
         Message message = Message.builder()
                 .setToken(fcmToken)
                 .setNotification(Notification.builder()
-                        .setTitle("Đơn hàng mới!")
-                        .setBody("Bạn có đơn hàng " + orderCode + " cần xác nhận")
+                        .setTitle("New Order!")
+                        .setBody("You have a new order " + orderCode + " to confirm")
                         .build())
                 .putData("type", "NEW_ORDER")
                 .putData("orderId", String.valueOf(orderId))
@@ -29,7 +29,7 @@ public class FirebaseNotificationAdapter {
         Message message = Message.builder()
                 .setToken(fcmToken)
                 .setNotification(Notification.builder()
-                        .setTitle("Cập nhật đơn hàng")
+                        .setTitle("Order Update")
                         .setBody(buildStatusMessage(orderCode, status))
                         .build())
                 .putData("type", "ORDER_STATUS")
@@ -52,13 +52,13 @@ public class FirebaseNotificationAdapter {
 
     private String buildStatusMessage(String orderCode, String status) {
         return switch (status) {
-            case "CONFIRMED"  -> "Đơn hàng " + orderCode + " đã được xác nhận";
-            case "PREPARING"  -> "Đơn hàng " + orderCode + " đang được chuẩn bị";
-            case "READY"      -> "Đơn hàng " + orderCode + " đã sẵn sàng, cửa hàng chuẩn bị giao đến bạn";
-            case "DELIVERING" -> "Đơn hàng " + orderCode + " đang trên đường giao đến bạn";
-            case "DELIVERED"  -> "Đơn hàng " + orderCode + " đã giao thành công. Cảm ơn bạn!";
-            case "CANCELLED"  -> "Đơn hàng " + orderCode + " đã bị hủy";
-            default           -> "Trạng thái đơn hàng " + orderCode + " đã được cập nhật";
+            case "CONFIRMED" -> "Order " + orderCode + " has been confirmed";
+            case "PREPARING" -> "Order " + orderCode + " is being prepared";
+            case "READY" -> "Order " + orderCode + " is ready, the store will deliver to you soon";
+            case "DELIVERING" -> "Order " + orderCode + " is on its way to you";
+            case "DELIVERED" -> "Order " + orderCode + " has been delivered. Thank you!";
+            case "CANCELLED" -> "Order " + orderCode + " has been cancelled";
+            default -> "Order " + orderCode + " status has been updated";
         };
     }
 }

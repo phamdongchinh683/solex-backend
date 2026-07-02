@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.solex_backend.domain.state.OrderStateFactory;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,6 +37,7 @@ public class OrderService {
         private final ShippingService shippingService;
         private final CouponService couponService;
         private final NotificationPort notificationPort;
+        private final NotificationService notificationService;
 
         public OrderResponse createOrder(User user, CreateOrderRequest request) {
                 Cart cart = cartRepository.findByUser(user)
@@ -43,7 +45,7 @@ public class OrderService {
 
                 List<CartItem> cartItems = cartItemRepository.findByCart(cart);
                 if (cartItems.isEmpty()) {
-                        throw new BusinessException("Giỏ hàng trống");
+                        throw new BusinessException("Cart is empty");
                 }
 
                 Address address = addressRepository.findByIdAndUser(request.addressId(), user)
@@ -103,7 +105,11 @@ public class OrderService {
                 User operator = restaurant.getOperator();
                 if (operator != null && operator.getFcmToken() != null) {
                         notificationPort.notifyNewOrderToRestaurant(
-                                operator.getFcmToken(), order.getId(), order.getOrderCode());
+                                        operator.getFcmToken(), order.getId(), order.getOrderCode());
+                        notificationService.createOrderNotification(
+                                        operator, order, OrderStateFactory.fromString(order.getStatus()),
+                                        "New Order Received", "You have a new order: " + order.getOrderCode());
+
                 }
 
                 return toOrderResponse(order);

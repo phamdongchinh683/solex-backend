@@ -8,11 +8,11 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record ResetPasswordRequest(
-        @Schema(description = "Email address or phone number") @NotBlank(message = "Vui lòng nhập email hoặc số điện thoại") String value,
+        @Schema(description = "Email address or phone number") @NotBlank(message = "Please enter email or phone number") String value,
 
-        @Schema(description = "OTP code (6 digits)") @NotBlank(message = "Vui lòng nhập mã OTP") @Pattern(regexp = "^\\d{6}$", message = "OTP phải có 6 chữ số") String otp,
+        @Schema(description = "OTP code (6 digits)") @NotBlank(message = "Please enter OTP code") @Pattern(regexp = "^\\d{6}$", message = "OTP must be 6 digits") String otp,
 
-        @Schema(description = "Field type: EMAIL or PHONE") @NotNull(message = "Vui lòng chọn loại trường") Enums.OtpType field,
+        @Schema(description = "Field type: EMAIL or PHONE") @NotNull(message = "Please select field type") Enums.OtpType field,
 
-        @Schema(description = "New password") @NotBlank(message = "Vui lòng nhập mật khẩu mới") @Size(min = 8, max = 20, message = "Mật khẩu phải từ 8 đến 20 ký tự") String password) {
+        @Schema(description = "New password") @NotBlank(message = "Please enter new password") @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters") String password) {
 }

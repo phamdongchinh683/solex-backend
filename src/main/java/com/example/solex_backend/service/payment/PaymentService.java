@@ -37,16 +37,16 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + request.orderId()));
 
         if (!order.getUser().getId().equals(user.getId())) {
-            throw new BusinessException("Bạn không có quyền thanh toán cho đơn hàng này");
+            throw new BusinessException("You do not have permission to pay for this order");
         }
         if (!"PENDING".equals(order.getStatus())) {
-            throw new BusinessException("Chỉ các đơn hàng ở trạng thái CHỜ XỬ LÝ mới có thể thanh toán");
+            throw new BusinessException("Only orders in PENDING status can be paid");
         }
 
         boolean hasPending = paymentRepository.findByOrder(order).stream()
                 .anyMatch(p -> PaymentStatus.PENDING.name().equals(p.getStatus()));
         if (hasPending) {
-            throw new BusinessException("Đã có giao dịch thanh toán đang chờ xử lý cho đơn hàng này");
+            throw new BusinessException("A pending payment transaction already exists for this order");
         }
 
         String transactionRef = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
@@ -69,7 +69,7 @@ public class PaymentService {
                 .filter(s -> s.supports(request.method()))
                 .findFirst()
                 .orElseThrow(
-                        () -> new BusinessException("Phương thức thanh toán không được hỗ trợ: " + request.method()));
+                        () -> new BusinessException("Payment method not supported: " + request.method()));
 
         PaymentInitResult result = strategy.initiate(order, payment, clientIp);
 
@@ -91,7 +91,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + id));
         if (!payment.getOrder().getUser().getId().equals(user.getId())) {
-            throw new BusinessException("Bạn không có quyền xem giao dịch thanh toán này");
+            throw new BusinessException("You do not have permission to view this payment transaction");
         }
         return toPaymentResponse(payment);
     }

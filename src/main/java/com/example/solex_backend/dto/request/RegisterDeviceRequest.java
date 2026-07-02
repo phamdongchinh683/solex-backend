@@ -5,9 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record RegisterDeviceRequest(
-        @NotBlank(message = "FCM token không được để trống")
+        @NotBlank(message = "FCM token must not be empty")
         String token,
 
-        @NotNull(message = "Hệ điều hành không được để trống")
+        @NotNull(message = "Operating system must not be empty")
         Enums.DeviceOs deviceOs
 ) {}

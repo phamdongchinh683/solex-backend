@@ -33,7 +33,7 @@ public class StripeCardService {
             SetupIntent intent = SetupIntent.create(params);
             return new SetupIntentResponse(intent.getClientSecret());
         } catch (StripeException e) {
-            throw new BusinessException("Không thể tạo setup intent: " + e.getMessage());
+            throw new BusinessException("Cannot create setup intent: " + e.getMessage());
         }
     }
 
@@ -54,7 +54,7 @@ public class StripeCardService {
                     .map(pm -> toCardResponse(pm, defaultPmId))
                     .toList();
         } catch (StripeException e) {
-            throw new BusinessException("Không thể lấy danh sách thẻ: " + e.getMessage());
+            throw new BusinessException("Cannot list cards: " + e.getMessage());
         }
     }
 
@@ -63,11 +63,11 @@ public class StripeCardService {
         try {
             PaymentMethod pm = PaymentMethod.retrieve(paymentMethodId);
             if (!customerId.equals(pm.getCustomer())) {
-                throw new BusinessException("Thẻ không thuộc về khách hàng này");
+                throw new BusinessException("Card does not belong to this customer");
             }
             pm.detach();
         } catch (StripeException e) {
-            throw new BusinessException("Không thể xoá thẻ: " + e.getMessage());
+            throw new BusinessException("Cannot remove card: " + e.getMessage());
         }
     }
 
@@ -76,7 +76,7 @@ public class StripeCardService {
         try {
             PaymentMethod pm = PaymentMethod.retrieve(paymentMethodId);
             if (!customerId.equals(pm.getCustomer())) {
-                throw new BusinessException("Thẻ không thuộc về khách hàng này");
+                throw new BusinessException("Card does not belong to this customer");
             }
             CustomerUpdateParams params = CustomerUpdateParams.builder()
                     .setInvoiceSettings(
@@ -87,7 +87,7 @@ public class StripeCardService {
                     .build();
             Customer.retrieve(customerId).update(params);
         } catch (StripeException e) {
-            throw new BusinessException("Không thể đặt thẻ mặc định: " + e.getMessage());
+            throw new BusinessException("Cannot set default card: " + e.getMessage());
         }
     }
 

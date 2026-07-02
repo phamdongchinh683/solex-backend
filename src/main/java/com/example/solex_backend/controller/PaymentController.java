@@ -35,7 +35,8 @@ public class PaymentController {
             @AuthenticationPrincipal User user,
             @RequestBody @Valid CreatePaymentRequest request,
             HttpServletRequest httpRequest) {
-        return ApiResponse.ok("Khởi tạo thanh toán thành công", paymentService.initiatePayment(user, request, getClientIp(httpRequest)));
+        return ApiResponse.ok("Payment initiated successfully",
+                paymentService.initiatePayment(user, request, getClientIp(httpRequest)));
     }
 
     @Operation(summary = "Get payment status by payment ID")
@@ -45,7 +46,7 @@ public class PaymentController {
     public ApiResponse<PaymentResponse> getPayment(
             @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ApiResponse.ok("Thành công", paymentService.getPaymentById(id, user));
+        return ApiResponse.ok("OK", paymentService.getPaymentById(id, user));
     }
 
     @Operation(summary = "Stripe webhook — called by Stripe, no JWT required")

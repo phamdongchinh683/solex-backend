@@ -9,7 +9,6 @@ import com.example.solex_backend.dto.request.RegisterDeviceRequest;
 import com.example.solex_backend.dto.request.ResetPasswordRequest;
 import com.example.solex_backend.dto.request.SendOtpRequest;
 import com.example.solex_backend.dto.request.UpdateContactRequest;
-import com.example.solex_backend.dto.request.UpdateFcmTokenRequest;
 import com.example.solex_backend.dto.request.VerifyOtpRequest;
 import com.example.solex_backend.dto.response.AuthResponse;
 import com.example.solex_backend.dto.response.DeviceResponse;
@@ -39,28 +38,28 @@ public class AuthController {
     @PostMapping("/sign-in")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
-        return ApiResponse.ok("Thành công", response);
+        return ApiResponse.ok("OK", response);
     }
 
     @Operation(summary = "Send OTP code")
     @PostMapping("/otp/send")
     public ApiResponse<AuthResponse> sendOtp(@Valid @RequestBody SendOtpRequest request) {
         otpService.sendOtp(request);
-        return ApiResponse.ok("OTP đã được gửi", null);
+        return ApiResponse.ok("OTP has been sent", null);
     }
 
     @Operation(summary = "Check if email or phone already exists")
     @PostMapping("/contact/check")
     public ApiResponse<Boolean> checkContact(@Valid @RequestBody ContactCheckRequest request) {
         boolean exists = otpService.checkContactExists(request);
-        return ApiResponse.ok("Thành công", exists);
+        return ApiResponse.ok("OK", exists);
     }
 
     @Operation(summary = "Verify OTP code")
     @PostMapping("/otp/verify")
     public ApiResponse<Void> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         otpService.verifyOtp(request);
-        return ApiResponse.ok("Xác thực OTP thành công", null);
+        return ApiResponse.ok("OTP verification OK", null);
     }
 
     @Operation(summary = "Update email or phone — requires OTP sent to the new value first, 24h cooldown applies")
@@ -70,14 +69,14 @@ public class AuthController {
             @AuthenticationPrincipal User user,
             @Valid @RequestBody UpdateContactRequest request) {
         User response = authService.updateContact(user, request);
-        return ApiResponse.ok("Cập nhật thông tin liên hệ thành công", response);
+        return ApiResponse.ok("Contact info updated OK", response);
     }
 
     @Operation(summary = "Reset password using OTP — requires OTP sent to email/phone first")
     @PostMapping("/reset-password")
     public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
-        return ApiResponse.ok("Đặt lại mật khẩu thành công", null);
+        return ApiResponse.ok("Password reset OK", null);
     }
 
     @Operation(summary = "Logout and invalidate current token, optionally delete device FCM token")
@@ -86,7 +85,7 @@ public class AuthController {
     public ApiResponse<Void> logout(@Valid @RequestBody(required = false) LogoutRequest request) {
         String fcmToken = request != null ? request.fcmToken() : null;
         authService.logout(fcmToken);
-        return ApiResponse.ok("Đăng xuất thành công", null);
+        return ApiResponse.ok("Logged out OK", null);
     }
 
     @Operation(summary = "Get list of registered devices")
@@ -94,7 +93,7 @@ public class AuthController {
     @GetMapping("/devices")
     public ApiResponse<List<DeviceResponse>> getDevices(@AuthenticationPrincipal User user) {
         List<DeviceResponse> devices = authService.getDevices(user);
-        return ApiResponse.ok("Danh sách thiết bị", devices);
+        return ApiResponse.ok("Device list", devices);
     }
 
     @Operation(summary = "Register or update device FCM token with OS info")
@@ -104,7 +103,7 @@ public class AuthController {
             @AuthenticationPrincipal User user,
             @Valid @RequestBody RegisterDeviceRequest request) {
         authService.registerDevice(user, request);
-        return ApiResponse.ok("Thiết bị đã được đăng ký", null);
+        return ApiResponse.ok("Device has been registered", null);
     }
 
 }

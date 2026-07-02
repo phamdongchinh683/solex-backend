@@ -29,7 +29,7 @@ public class StripeWebhookService {
         try {
             event = Webhook.constructEvent(payload, sigHeader, stripeConfig.getWebhookSecret());
         } catch (SignatureVerificationException e) {
-            throw new BusinessException("Chữ ký webhook Stripe không hợp lệ");
+            throw new BusinessException("Invalid Stripe webhook signature");
         }
 
         switch (event.getType()) {
@@ -69,7 +69,7 @@ public class StripeWebhookService {
                     try {
                         return event.getDataObjectDeserializer().deserializeUnsafe();
                     } catch (StripeException e) {
-                        throw new BusinessException("Không thể đọc dữ liệu webhook Stripe: " + e.getMessage());
+                        throw new BusinessException("Cannot read Stripe webhook data: " + e.getMessage());
                     }
                 });
     }

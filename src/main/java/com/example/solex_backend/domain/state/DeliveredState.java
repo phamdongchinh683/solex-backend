@@ -19,11 +19,11 @@ public final class DeliveredState implements OrderState {
 
     @Override
     public OrderState cancel() {
-        throw new BusinessException("Không thể huỷ đơn hàng đã giao");
+        throw new BusinessException("Cannot cancel a delivered order");
     }
 
     @Override
     public OrderState nextStep() {
-        throw new BusinessException("Không thể chuyển tiếp từ trạng thái ĐÃ GIAO");
+        throw new BusinessException("Cannot advance from DELIVERED status");
     }
 }

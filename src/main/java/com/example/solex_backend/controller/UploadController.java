@@ -26,6 +26,6 @@ public class UploadController {
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/presign")
     public ApiResponse<PresignResponse> presign(@RequestBody @Valid PresignRequest request) {
-        return ApiResponse.ok("Thành công", cloudinaryService.generatePresign(request.folder()));
+        return ApiResponse.ok("OK", cloudinaryService.generatePresign(request.folder()));
     }
 }

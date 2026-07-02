@@ -61,8 +61,8 @@ public class CartService {
                 String existingRestaurantName = existingItems.get(0).getVariant().getProduct().getRestaurant()
                         .getName();
                 throw new BusinessException(
-                        "Giỏ hàng của bạn đã có sản phẩm từ nhà hàng \"" + existingRestaurantName + "\". " +
-                                "Vui lòng xoá giỏ hàng trước khi thêm sản phẩm từ nhà hàng khác.");
+                        "Your cart already has items from restaurant \"" + existingRestaurantName + "\". " +
+                                "Please clear your cart before adding items from another restaurant.");
             }
         }
 
@@ -75,7 +75,7 @@ public class CartService {
 
     public CartItemResponse updateCartItem(User user, Long cartItemId, String action) {
         if (!action.equals("+") && !action.equals("-")) {
-            throw new BusinessException("Hành động không hợp lệ. Vui lòng sử dụng '+' hoặc '-'");
+            throw new BusinessException("Invalid action. Please use '+' or '-'");
         }
 
         int delta = action.equals("+") ? 1 : -1;
@@ -89,7 +89,7 @@ public class CartService {
             if (!cartItemRepository.existsById(cartItemId)) {
                 throw new ResourceNotFoundException("Cart item not found: " + cartItemId);
             }
-            throw new BusinessException("Bạn không có quyền cập nhật sản phẩm này trong giỏ hàng");
+            throw new BusinessException("You do not have permission to update this cart item");
         }
 
         CartItem item = cartItemRepository.findById(cartItemId)
@@ -101,7 +101,7 @@ public class CartService {
         CartItem item = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
         if (!item.getCart().getUser().getId().equals(user.getId())) {
-            throw new BusinessException("Bạn không có quyền xoá sản phẩm này trong giỏ hàng");
+            throw new BusinessException("You do not have permission to delete this cart item");
         }
         cartItemRepository.delete(item);
     }

@@ -58,10 +58,10 @@ public class AuthService {
         otpService.isOtpVerified(request.email(), request.phone());
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new BusinessException("Email đã được đăng ký");
+            throw new BusinessException("Email already registered");
         }
         if (request.phone() != null && userRepository.findByPhone(request.phone()).isPresent()) {
-            throw new BusinessException("Số điện thoại đã được đăng ký");
+            throw new BusinessException("Phone number already registered");
         }
 
         User operator = User.builder()
@@ -123,7 +123,7 @@ public class AuthService {
                 .getContext().getAuthentication().getDetails();
         Long userId = jwt.extractUserId(token);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new BusinessException("User not found"));
 
         if (fcmToken != null && !fcmToken.isBlank()) {
             userDeviceRepository.findByUserAndFcmToken(user, fcmToken)
@@ -153,30 +153,30 @@ public class AuthService {
             case EMAIL -> {
                 if (user.getLastChangeEmail() != null &&
                         user.getLastChangeEmail().plusHours(CONTACT_CHANGE_COOLDOWN_HOURS).isAfter(now)) {
-                    throw new BusinessException("Email chỉ có thể được thay đổi mỗi 24 giờ một lần");
+                    throw new BusinessException("Email can only be changed once every 24 hours");
                 }
             }
             case PHONE -> {
                 if (user.getLastChangePhone() != null &&
                         user.getLastChangePhone().plusHours(CONTACT_CHANGE_COOLDOWN_HOURS).isAfter(now)) {
-                    throw new BusinessException("Số điện thoại chỉ có thể được thay đổi mỗi 24 giờ một lần");
+                    throw new BusinessException("Phone number can only be changed once every 24 hours");
                 }
             }
         }
 
         UserOtp userOtp = switch (request.field()) {
             case EMAIL -> userOtpRepository.findByEmail(request.value())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho email này — hãy gửi OTP trước"));
+                    .orElseThrow(() -> new BusinessException("No OTP found for this email — send OTP first"));
             case PHONE -> userOtpRepository.findByPhone(request.value())
                     .orElseThrow(() -> new BusinessException(
-                            "Không tìm thấy OTP cho số điện thoại này — hãy gửi OTP trước"));
+                            "No OTP found for this phone number — send OTP first"));
         };
 
         if (userOtp.getExpiresAt() == null || userOtp.getExpiresAt().isBefore(now)) {
-            throw new BusinessException("OTP đã hết hạn");
+            throw new BusinessException("OTP has expired");
         }
         if (!request.otp().equals(userOtp.getOtp())) {
-            throw new BusinessException("OTP không hợp lệ");
+            throw new BusinessException("Invalid OTP");
         }
 
         switch (request.field()) {
@@ -200,24 +200,24 @@ public class AuthService {
     public void resetPassword(ResetPasswordRequest request) {
         UserOtp userOtp = switch (request.field()) {
             case EMAIL -> userOtpRepository.findByEmail(request.value())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy OTP cho email này — hãy gửi OTP trước"));
+                    .orElseThrow(() -> new BusinessException("No OTP found for this email — send OTP first"));
             case PHONE -> userOtpRepository.findByPhone(request.value())
                     .orElseThrow(() -> new BusinessException(
-                            "Không tìm thấy OTP cho số điện thoại này — hãy gửi OTP trước"));
+                            "No OTP found for this phone number — send OTP first"));
         };
 
         if (userOtp.getExpiresAt() == null || userOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BusinessException("OTP đã hết hạn");
+            throw new BusinessException("OTP has expired");
         }
         if (!request.otp().equals(userOtp.getOtp())) {
-            throw new BusinessException("OTP không hợp lệ");
+            throw new BusinessException("Invalid OTP");
         }
 
         User user = switch (request.field()) {
             case EMAIL -> userRepository.findByEmail(request.value())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản cho email này"));
+                    .orElseThrow(() -> new BusinessException("No account found for this email"));
             case PHONE -> userRepository.findByPhone(request.value())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản cho số điện thoại này"));
+                    .orElseThrow(() -> new BusinessException("No account found for this phone number"));
         };
 
         user.setPassword(passwordEncoder.encode(request.password()));
@@ -239,24 +239,24 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         if ((request.email() == null || request.email().isBlank())
                 && (request.phone() == null || request.phone().isBlank())) {
-            throw new BusinessException("Phải cung cấp email hoặc số điện thoại");
+            throw new BusinessException("Must provide email or phone number");
         }
 
         User user;
         if (request.phone() != null && !request.phone().isBlank()) {
             user = userRepository.findByPhone(request.phone())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản cho số điện thoại này"));
+                    .orElseThrow(() -> new BusinessException("No account found for this phone number"));
         } else {
             user = userRepository.findByEmail(request.email())
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản cho email này"));
+                    .orElseThrow(() -> new BusinessException("No account found for this email"));
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new BusinessException("Mật khẩu không đúng");
+            throw new BusinessException("Incorrect password");
         }
 
         if (user.getIsActive() == 0) {
-            throw new BusinessException("Tài khoản chưa được kích hoạt");
+            throw new BusinessException("Account is not activated");
         }
 
         String token = jwt.generateToken(user);

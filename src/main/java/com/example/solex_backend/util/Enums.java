@@ -31,4 +31,16 @@ public final class Enums {
         IOS, ANDROID, WEB
     }
 
+    public enum NotificationType {
+        NEW_ORDER,
+        ORDER_CONFIRMED,
+        ORDER_PREPARING,
+        ORDER_READY,
+        ORDER_DELIVERING,
+        ORDER_DELIVERED,
+        ORDER_CANCELLED,
+        PAYMENT_SUCCESS,
+        PAYMENT_FAILED
+    }
+
 }

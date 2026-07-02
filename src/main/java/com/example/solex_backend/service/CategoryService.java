@@ -32,7 +32,7 @@ public class CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
 
         if (categoryRepository.existsByRestaurantAndName(restaurant, request.name())) {
-            throw new BusinessException("Danh mục '" + request.name() + "' đã tồn tại trong nhà hàng này");
+            throw new BusinessException("Category '" + request.name() + "' already exists in this restaurant");
         }
 
         Category category = Category.builder()

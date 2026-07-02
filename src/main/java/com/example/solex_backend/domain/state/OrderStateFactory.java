@@ -14,7 +14,7 @@ public final class OrderStateFactory {
             case "DELIVERING" -> DeliveringState.INSTANCE;
             case "DELIVERED" -> DeliveredState.INSTANCE;
             case "CANCELLED" -> CancelledState.INSTANCE;
-            default -> throw new BusinessException("Trạng thái đơn hàng không xác định: " + status);
+            default -> throw new BusinessException("Unknown order status: " + status);
         };
     }
 }

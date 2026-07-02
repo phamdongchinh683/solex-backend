@@ -14,7 +14,7 @@ public final class CancelledState implements OrderState {
 
     @Override
     public OrderState confirm() {
-        throw new BusinessException("Không thể xác nhận đơn hàng đã huỷ");
+        throw new BusinessException("Cannot confirm a cancelled order");
     }
 
     @Override
@@ -24,6 +24,6 @@ public final class CancelledState implements OrderState {
 
     @Override
     public OrderState nextStep() {
-        throw new BusinessException("Không thể chuyển tiếp từ trạng thái ĐÃ HUỶ");
+        throw new BusinessException("Cannot advance from CANCELLED status");
     }
 }

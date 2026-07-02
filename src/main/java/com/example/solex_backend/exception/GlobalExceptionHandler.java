@@ -31,13 +31,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnauthorized(AuthenticationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Không có quyền truy cập: token không hợp lệ hoặc bị thiếu"));
+                .body(ApiResponse.error("Access denied: invalid or missing token"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleForbidden(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Từ chối truy cập: không đủ quyền hạn"));
+                .body(ApiResponse.error("Access denied: insufficient permissions"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -55,10 +55,10 @@ public class GlobalExceptionHandler {
         if (cause instanceof InvalidFormatException ife && !ife.getPath().isEmpty()) {
             String field = ife.getPath().get(0).getFieldName();
             String expected = ife.getTargetType().getSimpleName();
-            String msg = field + ": giá trị không hợp lệ, kiểu dữ liệu mong đợi là " + expected;
+            String msg = field + ": invalid value, expected type is " + expected;
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(msg));
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error("Nội dung yêu cầu không hợp lệ"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error("Invalid request content"));
     }
 
     @ExceptionHandler(Exception.class)

@@ -33,10 +33,10 @@ public class RatingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
         if (!"DELIVERED".equals(order.getStatus())) {
-            throw new BusinessException("Đơn hàng phải ở trạng thái ĐÃ GIAO trước khi đánh giá");
+            throw new BusinessException("Order must be in DELIVERED status before rating");
         }
         if (Boolean.TRUE.equals(order.getRate())) {
-            throw new BusinessException("Đơn hàng này đã được đánh giá");
+            throw new BusinessException("This order has already been rated");
         }
 
         int newRating = validateRating(request.rating());
@@ -62,7 +62,7 @@ public class RatingService {
     @Transactional(readOnly = true)
     public SliceResponse<RatingResponse> getRestaurantRatings(Long restaurantId, Integer star, Long cursor, int size) {
         if (star != null && (star < 1 || star > 5)) {
-            throw new BusinessException("Bộ lọc sao phải từ 1 đến 5");
+            throw new BusinessException("Star filter must be between 1 and 5");
         }
         List<Rating> result = star != null
                 ? ratingRepository.findByRestaurantAndStarBeforeCursor(restaurantId, star, cursor, PageRequest.of(0, size + 1))
@@ -75,7 +75,7 @@ public class RatingService {
 
     private int validateRating(Integer rating) {
         if (rating == null || rating < 1 || rating > 5) {
-            throw new BusinessException("Đánh giá phải từ 1 đến 5");
+            throw new BusinessException("Rating must be between 1 and 5");
         }
         return rating;
     }
@@ -94,7 +94,7 @@ public class RatingService {
             case 3 -> restaurant.setStar3(nextCounterValue(restaurant.getStar3(), delta));
             case 4 -> restaurant.setStar4(nextCounterValue(restaurant.getStar4(), delta));
             case 5 -> restaurant.setStar5(nextCounterValue(restaurant.getStar5(), delta));
-            default -> throw new BusinessException("Đánh giá phải từ 1 đến 5");
+            default -> throw new BusinessException("Rating must be between 1 and 5");
         }
     }
 
