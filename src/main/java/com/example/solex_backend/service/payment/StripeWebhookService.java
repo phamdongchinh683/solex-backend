@@ -4,8 +4,10 @@ import com.example.solex_backend.config.StripeConfig;
 import com.example.solex_backend.domain.Payment;
 import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.service.OrderStatusService;
+import com.example.solex_backend.util.Enums.PaymentStatus;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
@@ -57,6 +59,24 @@ public class StripeWebhookService {
                         () -> log.warn(
                                 "Stripe payment_intent.payment_failed: no payment record found: intentId={}",
                                 intent.getId()));
+            }
+            case "charge.refunded" -> {
+                Charge charge = (Charge) event.getDataObjectDeserializer()
+                        .getObject()
+                        .orElseGet(() -> {
+                            try {
+                                return event.getDataObjectDeserializer().deserializeUnsafe();
+                            } catch (StripeException e) {
+                                throw new BusinessException("Cannot read Stripe webhook data: " + e.getMessage());
+                            }
+                        });
+                String paymentIntentId = charge.getPaymentIntent();
+                log.info("Stripe charge refunded: chargeId={}, paymentIntentId={}", charge.getId(), paymentIntentId);
+                paymentService.findOptionalByTransactionRef(paymentIntentId).ifPresent(payment -> {
+                    if (!PaymentStatus.REFUNDED.name().equals(payment.getStatus())) {
+                        paymentService.markRefunded(payment);
+                    }
+                });
             }
             default -> log.debug("Unhandled Stripe event: {}", event.getType());
         }

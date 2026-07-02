@@ -21,7 +21,8 @@ public class OpenRouteServiceClient {
     private final String apiKey;
     private final RestClient restClient;
 
-    public record RouteDetails(double distanceKm, double durationSeconds, List<List<Double>> coordinates) {}
+    public record RouteDetails(double distanceKm, double durationSeconds, List<List<Double>> coordinates) {
+    }
 
     public OpenRouteServiceClient(OpenRouteServiceConfig config) {
         this.apiKey = config.getApiKey();

@@ -9,6 +9,7 @@ import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.OrderRepository;
 import com.example.solex_backend.repository.OrderStatusHistoryRepository;
 import com.example.solex_backend.service.notification.NotificationPort;
+import com.example.solex_backend.service.payment.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class OrderStatusService {
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final NotificationPort notificationPort;
     private final NotificationService notificationService;
+    private final PaymentService paymentService;
 
     public void confirmOrder(Long orderId, User operator) {
         Order order = getOrderOrThrow(orderId);
@@ -40,6 +42,7 @@ public class OrderStatusService {
         Order order = getOrderOrThrow(orderId);
         OrderState newState = OrderStateFactory.fromString(order.getStatus()).cancel();
         updateStatus(order, newState, operator, reason);
+        paymentService.processRefundForOrder(orderId);
     }
 
     public void confirmOrderByPayment(Long orderId) {
@@ -52,6 +55,7 @@ public class OrderStatusService {
         Order order = getOrderOrThrow(orderId);
         OrderState newState = OrderStateFactory.fromString(order.getStatus()).cancel();
         updateStatus(order, newState, null, "Payment failed - order cancelled automatically");
+        paymentService.processRefundForOrder(orderId);
     }
 
     private Order getOrderOrThrow(Long orderId) {

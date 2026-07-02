@@ -14,5 +14,6 @@ public record PaymentResponse(
         @Schema(description = "Admin commission (20% of total, STRIPE only)") BigDecimal commissionAmount,
         @Schema(description = "Transaction reference") String transactionRef,
         @Schema(description = "Timestamp when payment was confirmed") LocalDateTime paidAt,
+        @Schema(description = "Timestamp when payment was refunded") LocalDateTime refundedAt,
         @Schema(description = "Timestamp when payment record was created") LocalDateTime createdAt
 ) {}

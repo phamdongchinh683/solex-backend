@@ -116,6 +116,30 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
+    public void markRefunded(Payment payment) {
+        payment.setStatus(PaymentStatus.REFUNDED.name());
+        payment.setRefundedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+    }
+
+    public void processRefundForOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        paymentRepository.findByOrder(order).stream()
+                .filter(p -> PaymentStatus.SUCCESS.name().equals(p.getStatus())
+                        && PaymentMethod.STRIPE.name().equals(p.getMethod()))
+                .findFirst()
+                .ifPresent(payment -> {
+                    PaymentStrategy strategy = strategies.stream()
+                            .filter(s -> s.supports(PaymentMethod.STRIPE))
+                            .findFirst()
+                            .orElseThrow(() -> new BusinessException("Stripe strategy not found"));
+                    strategy.refund(payment);
+                    markRefunded(payment);
+                });
+    }
+
     private PaymentResponse toPaymentResponse(Payment p) {
         return new PaymentResponse(
                 p.getId(),
@@ -126,6 +150,7 @@ public class PaymentService {
                 p.getCommissionAmount(),
                 p.getTransactionRef(),
                 p.getPaidAt(),
+                p.getRefundedAt(),
                 p.getCreatedAt());
     }
 }

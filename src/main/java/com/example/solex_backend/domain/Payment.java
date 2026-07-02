@@ -44,6 +44,9 @@ public class Payment extends BaseEntity {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
+
     @PrePersist
     protected void onCreate() {
         if (status == null) status = "PENDING";

@@ -6,7 +6,9 @@ import com.example.solex_backend.exception.BusinessException;
 import com.example.solex_backend.util.Enums.PaymentMethod;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -55,5 +57,18 @@ public class StripePaymentStrategy implements PaymentStrategy {
     @Override
     public boolean supports(PaymentMethod method) {
         return method == PaymentMethod.STRIPE;
+    }
+
+    @Override
+    public void refund(Payment payment) {
+        try {
+            RefundCreateParams params = RefundCreateParams.builder()
+                    .setPaymentIntent(payment.getTransactionRef())
+                    .build();
+            Refund refund = Refund.create(params);
+            log.info("Stripe refund created: id={}, status={}", refund.getId(), refund.getStatus());
+        } catch (StripeException e) {
+            throw new BusinessException("Stripe refund failed: " + e.getMessage());
+        }
     }
 }
