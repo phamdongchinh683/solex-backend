@@ -35,11 +35,9 @@ public class CouponService {
 
     @Transactional(readOnly = true)
     public SliceResponse<CouponResponse> getActiveCouponsForRestaurant(Long restaurantId, Long cursor, int size) {
-        if (!restaurantRepository.existsById(restaurantId)) {
-            throw new ResourceNotFoundException("Restaurant not found: " + restaurantId);
-        }
         Restaurant restaurant = restaurantRepository.getReferenceById(restaurantId);
-        List<Coupon> result = couponRepository.findActiveByRestaurantAfterCursor(restaurant, LocalDateTime.now(), cursor, PageRequest.of(0, size + 1));
+        List<Coupon> result = couponRepository.findActiveByRestaurantAfterCursor(restaurant, LocalDateTime.now(),
+                cursor, PageRequest.of(0, size + 1));
         boolean hasNext = result.size() > size;
         List<Coupon> page = hasNext ? result.subList(0, size) : result;
         Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
@@ -50,7 +48,8 @@ public class CouponService {
     public SliceResponse<CouponResponse> getOperatorCoupons(User operator, Long cursor, int size) {
         Restaurant restaurant = restaurantRepository.findByOperator(operator)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
-        List<Coupon> result = couponRepository.findByRestaurantAfterCursor(restaurant, cursor, PageRequest.of(0, size + 1));
+        List<Coupon> result = couponRepository.findByRestaurantAfterCursor(restaurant, cursor,
+                PageRequest.of(0, size + 1));
         boolean hasNext = result.size() > size;
         List<Coupon> page = hasNext ? result.subList(0, size) : result;
         Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
@@ -98,8 +97,7 @@ public class CouponService {
                 c.getStartDate(),
                 c.getExpiryDate(),
                 c.getIsActive(),
-                c.getCreatedAt()
-        );
+                c.getCreatedAt());
     }
 
     public void applyToOrder(Long couponId, Order order) {
@@ -116,8 +114,7 @@ public class CouponService {
                 order.getSubtotal()
                         .add(order.getShippingFee())
                         .subtract(discount)
-                        .max(BigDecimal.ZERO)
-        );
+                        .max(BigDecimal.ZERO));
         orderRepository.save(order);
 
         coupon.setUsageCount(coupon.getUsageCount() + 1);
@@ -211,8 +208,7 @@ public class CouponService {
                 coupon.getStartDate(),
                 coupon.getExpiryDate(),
                 isValid,
-                message.toString().trim()
-        );
+                message.toString().trim());
     }
 
     public BigDecimal calculateDiscount(Coupon coupon, BigDecimal subtotal) {

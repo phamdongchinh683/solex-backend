@@ -50,8 +50,7 @@ public class OrderService {
 
                 Address address = addressRepository.findByIdAndUser(request.addressId(), user)
                                 .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Address not found: " + request.addressId()));
-
+                                                "Address not found: " + request.addressId()));;
                 BigDecimal subtotal = cartItems.stream()
                                 .map(item -> item.getVariant().getPrice().multiply(new BigDecimal(item.getQuantity())))
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -209,7 +208,7 @@ public class OrderService {
         }
 
         private String generateOrderCode() {
-                return "ORD" + System.currentTimeMillis();
+                return "XLORD" + System.currentTimeMillis();
         }
 
         private OrderResponse toOrderResponse(Order order) {
@@ -236,8 +235,7 @@ public class OrderService {
                                                 item.getUnitPrice().multiply(new BigDecimal(item.getQuantity()))))
                                 .collect(Collectors.toList());
 
-                List<Payment> payments = paymentRepository.findByOrder(order);
-                Payment latestPayment = payments.isEmpty() ? null : payments.get(payments.size() - 1);
+                Payment latestPayment = paymentRepository.findTopByOrderOrderByIdDesc(order).orElse(null);
 
                 return new OrderDetailResponse(
                                 order.getId(),

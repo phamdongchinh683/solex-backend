@@ -127,15 +127,15 @@ public class CustomerController {
     }
 
     @Operation(summary = "Get restaurant menu with optional filters")
-    @GetMapping("/restaurants/{restaurantId}/menu")
+    @GetMapping("/restaurants/{id}/menu")
     public ApiResponse<SliceResponse<ProductResponse>> getMenu(
-            @PathVariable Long restaurantId,
+            @PathVariable Long id,
             @Parameter(description = "Filter by category") @RequestParam(required = false) Long categoryId,
             @Parameter(description = "Search by name") @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.ok("OK",
-                restaurantService.getMenuByRestaurantId(restaurantId, categoryId, search, cursor, size));
+                restaurantService.getMenuByRestaurantId(id, categoryId, search, cursor, size));
     }
 
     @Operation(summary = "Check coupon by ID or code with subtotal to calculate discount")
@@ -148,31 +148,31 @@ public class CustomerController {
     }
 
     @Operation(summary = "Get active coupons for a restaurant")
-    @GetMapping("/restaurants/{restaurantId}/coupons")
+    @GetMapping("/restaurants/{id}/coupons")
     public ApiResponse<SliceResponse<CouponResponse>> getRestaurantCoupons(
-            @PathVariable Long restaurantId,
+            @PathVariable Long id,
             @RequestParam(defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", couponService.getActiveCouponsForRestaurant(restaurantId, cursor, size));
+        return ApiResponse.ok("OK", couponService.getActiveCouponsForRestaurant(id, cursor, size));
     }
 
     @Operation(summary = "Get restaurant ratings")
-    @GetMapping("/restaurants/{restaurantId}/ratings")
+    @GetMapping("/restaurants/{id}/ratings")
     public ApiResponse<SliceResponse<RatingResponse>> getRestaurantRatings(
-            @PathVariable Long restaurantId,
+            @PathVariable Long id,
             @Parameter(description = "Filter by star (1–5)") @RequestParam(required = false) Integer star,
             @RequestParam(defaultValue = "9223372036854775807") Long cursor,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok("OK", ratingService.getRestaurantRatings(restaurantId, star, cursor, size));
+        return ApiResponse.ok("OK", ratingService.getRestaurantRatings(id, star, cursor, size));
     }
 
     @Operation(summary = "Create or update my restaurant rating")
-    @PostMapping("/orders/{orderId}/rating")
+    @PostMapping("/orders/{id}/rating")
     public ApiResponse<RatingResponse> rateRestaurant(
-            @PathVariable Long orderId,
+            @PathVariable Long id,
             @AuthenticationPrincipal User user,
             @Valid @RequestBody CreateRatingRequest request) {
-        return ApiResponse.ok("Rating OK", ratingService.rateRestaurant(orderId, user, request));
+        return ApiResponse.ok("Rating OK", ratingService.rateRestaurant(id, user, request));
     }
 
     @Operation(summary = "List all variants of a product")
@@ -266,19 +266,19 @@ public class CustomerController {
     }
 
     @Operation(summary = "Get order detail")
-    @GetMapping("/orders/{orderId}")
+    @GetMapping("/orders/{id}")
     public ApiResponse<OrderDetailResponse> getOrder(
-            @PathVariable Long orderId,
+            @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ApiResponse.ok("OK", orderService.getOrderById(orderId, user));
+        return ApiResponse.ok("OK", orderService.getOrderById(id, user));
     }
 
     @Operation(summary = "Reorder — copy all items from a previous order into current cart")
-    @PostMapping("/orders/{orderId}/reorder")
+    @PostMapping("/orders/{id}/reorder")
     public ApiResponse<List<CartItemResponse>> reorder(
-            @PathVariable Long orderId,
+            @PathVariable Long id,
             @AuthenticationPrincipal User user) {
-        return ApiResponse.ok("Added to cart OK", orderService.reorderFromOrder(user, orderId));
+        return ApiResponse.ok("Added to cart OK", orderService.reorderFromOrder(user, id));
     }
 
     @Operation(summary = "Calculate shipping fee")

@@ -15,6 +15,9 @@ import java.util.Optional;
 
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     Optional<Restaurant> findByOperator(User operator);
+
+    @Query("SELECT r FROM Restaurant r LEFT JOIN FETCH r.categories WHERE r.id = :id")
+    Optional<Restaurant> findDetailById(@Param("id") Long id);
     boolean existsByIdAndOperator(Long id, User operator);
 
     @Query("SELECT r FROM Restaurant r WHERE r.isOpen = true AND r.id > :cursor ORDER BY r.id ASC")

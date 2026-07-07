@@ -3,6 +3,9 @@ package com.example.solex_backend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "restaurants", indexes = {
         @Index(name = "idx_restaurant_is_open", columnList = "is_open"),
@@ -64,4 +67,9 @@ public class Restaurant extends BaseEntity {
 
     @Column(name = "stripe_account_id", length = 100)
     private String stripeAccountId;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "restaurant", fetch = FetchType.LAZY)
+    @OrderBy("id ASC")
+    private List<Category> categories = new ArrayList<>();
 }

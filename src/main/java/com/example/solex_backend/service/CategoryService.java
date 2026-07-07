@@ -12,12 +12,8 @@ import com.example.solex_backend.exception.ResourceNotFoundException;
 import com.example.solex_backend.repository.CategoryRepository;
 import com.example.solex_backend.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,10 +26,6 @@ public class CategoryService {
     public CategoryResponse createCategory(User operator, CreateCategoryRequest request) {
         Restaurant restaurant = restaurantRepository.findByOperator(operator)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found for this operator"));
-
-        if (categoryRepository.existsByRestaurantAndName(restaurant, request.name())) {
-            throw new BusinessException("Category '" + request.name() + "' already exists in this restaurant");
-        }
 
         Category category = Category.builder()
                 .restaurant(restaurant)

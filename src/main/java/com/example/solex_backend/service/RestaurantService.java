@@ -45,9 +45,10 @@ public class RestaurantService {
         }
 
         public RestaurantDetailResponse getRestaurantById(Long id) {
-                Restaurant restaurant = restaurantRepository.findById(id)
-                                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + id));
-                return toRestaurantDetailResponse(restaurant);
+                return toRestaurantDetailResponse(
+                                restaurantRepository.findDetailById(id)
+                                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                                "Restaurant not found: " + id)));
         }
 
         public CategoryResponse createCategory(User operator, CreateCategoryRequest request) {
@@ -68,9 +69,6 @@ public class RestaurantService {
 
         public SliceResponse<ProductResponse> getMenuByRestaurantId(Long id, Long categoryId, String search,
                         Long cursor, int size) {
-                if (!restaurantRepository.existsById(id)) {
-                        throw new ResourceNotFoundException("Restaurant not found: " + id);
-                }
                 List<Product> result = productQueryRepository.findByFilters(id, categoryId, search, cursor, size + 1);
                 boolean hasNext = result.size() > size;
                 List<Product> page = hasNext ? result.subList(0, size) : result;
@@ -119,8 +117,7 @@ public class RestaurantService {
         }
 
         private RestaurantDetailResponse toRestaurantDetailResponse(Restaurant r) {
-                List<CategoryResponse> categories = categoryRepository.findSummariesByRestaurantId(r.getId())
-                                .stream()
+                List<CategoryResponse> categories = r.getCategories().stream()
                                 .map(c -> new CategoryResponse(c.getId(), c.getName(), c.getImageUrl()))
                                 .toList();
                 return new RestaurantDetailResponse(

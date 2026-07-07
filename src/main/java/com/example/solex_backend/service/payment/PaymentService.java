@@ -43,7 +43,7 @@ public class PaymentService {
             throw new BusinessException("Only orders in PENDING status can be paid");
         }
 
-        boolean hasPending = paymentRepository.findByOrder(order).stream()
+        boolean hasPending = paymentRepository.findTopByOrderOrderByIdDesc(order).stream()
                 .anyMatch(p -> PaymentStatus.PENDING.name().equals(p.getStatus()));
         if (hasPending) {
             throw new BusinessException("A pending payment transaction already exists for this order");
@@ -126,7 +126,7 @@ public class PaymentService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
-        paymentRepository.findByOrder(order).stream()
+        paymentRepository.findTopByOrderOrderByIdDesc(order).stream()
                 .filter(p -> PaymentStatus.SUCCESS.name().equals(p.getStatus())
                         && PaymentMethod.STRIPE.name().equals(p.getMethod()))
                 .findFirst()
