@@ -12,7 +12,9 @@ import java.util.Optional;
 
 public interface AddressRepository extends JpaRepository<Address, Long> {
     List<Address> findByUser(User user);
+
     Optional<Address> findByIdAndUser(Long id, User user);
+
     boolean existsByIdAndUser(Long id, User user);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -20,6 +22,13 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
     void clearDefaultByUserId(@Param("userId") Long userId);
 
     @Modifying
-    @Query("UPDATE Address a SET a.isDefault = true WHERE a.id = :id AND a.user.id = :userId")
-    void setDefaultByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+    @Query(value = """
+            UPDATE address
+            SET is_default = true
+            WHERE id = :id
+            RETURNING *
+            """, nativeQuery = true)
+    Address setDefaultByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    Address deleteByIdAndUser(Long id, User user);
 }

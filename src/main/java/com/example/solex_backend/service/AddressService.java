@@ -44,7 +44,6 @@ public class AddressService {
         return toResponse(address);
     }
 
-    // Rule 1: findByIdAndUser replaces findById + manual ownership comparison
     public AddressResponse updateAddress(Long id, User user, CreateAddressRequest request) {
         Address address = addressRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + id));
@@ -59,34 +58,23 @@ public class AddressService {
         return toResponse(address);
     }
 
-    // Rule 1: existsByIdAndUser adds the previously missing ownership check before delete
     public void deleteAddress(Long id, User user) {
-        if (!addressRepository.existsByIdAndUser(id, user)) {
-            throw new ResourceNotFoundException("Address not found: " + id);
-        }
-        addressRepository.deleteById(id);
+        addressRepository.deleteByIdAndUser(id, user);
     }
 
-    // Rule 1: findByIdAndUser replaces findById + manual check
-    // Rule 3: bulk @Modifying queries replace per-row load → set → save loop
     public AddressResponse setDefaultAddress(Long id, User user) {
-        Address address = addressRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Address not found: " + id));
 
         addressRepository.clearDefaultByUserId(user.getId());
-        addressRepository.setDefaultByIdAndUserId(id, user.getId());
-        address.setIsDefault(true);
+        Address address = addressRepository.setDefaultByIdAndUserId(id, user.getId());
+
         return toResponse(address);
     }
 
     private AddressResponse toResponse(Address address) {
-        String fullName = (address.getFirstName() != null ? address.getFirstName() : "")
-                + " " + (address.getLastName() != null ? address.getLastName() : "");
         return new AddressResponse(
                 address.getId(),
-                address.getFirstName(), address.getLastName(), fullName,
+                address.getFirstName(), address.getLastName(),
                 address.getPhone(), address.getLongitude(), address.getLatitude(),
-                address.getAddressDetail(), address.getIsDefault(), address.getCreatedAt()
-        );
+                address.getAddressDetail(), address.getIsDefault(), address.getCreatedAt());
     }
 }

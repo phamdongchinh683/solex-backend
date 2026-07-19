@@ -65,10 +65,10 @@ public class AuthController {
     @Operation(summary = "Update email or phone — requires OTP sent to the new value first, 24h cooldown applies")
     @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/contact")
-    public ApiResponse<User> updateContact(
+    public ApiResponse<AuthResponse> updateContact(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody UpdateContactRequest request) {
-        User response = authService.updateContact(user, request);
+        AuthResponse response = authService.updateContact(user, request);
         return ApiResponse.ok("Contact info updated OK", response);
     }
 

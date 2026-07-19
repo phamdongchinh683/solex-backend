@@ -8,7 +8,6 @@ public record AddressResponse(
         @Schema(description = "Address ID")        Long id,
         @Schema(description = "First name")        String firstName,
         @Schema(description = "Last name")         String lastName,
-        @Schema(description = "Full name")         String fullName,
         @Schema(description = "Phone")             String phone,
         @Schema(description = "Longitude")         double longitude,
         @Schema(description = "Latitude")          double latitude,

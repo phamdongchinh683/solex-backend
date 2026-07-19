@@ -146,7 +146,7 @@ public class AuthService {
         userDeviceRepository.upsertDevice(user.getId(), request.token(), request.deviceOs().name());
     }
 
-    public User updateContact(User user, UpdateContactRequest request) {
+    public AuthResponse updateContact(User user, UpdateContactRequest request) {
         LocalDateTime now = LocalDateTime.now();
 
         switch (request.field()) {
@@ -194,7 +194,8 @@ public class AuthService {
         userOtpRepository.save(userOtp);
         User userUpdated = userRepository.save(user);
         userCacheService.evict(userUpdated.getId());
-        return userUpdated;
+        String token = jwt.generateToken(userUpdated);
+        return new AuthResponse(token, toUserInfoResponse(userUpdated));
     }
 
     public void resetPassword(ResetPasswordRequest request) {

@@ -108,9 +108,7 @@ public class SecurityConfig {
                                         List.of(
                                                 new SimpleGrantedAuthority(
                                                         "ROLE_" + role)));
-
                                 authentication.setDetails(token);
-
                                 SecurityContextHolder
                                         .getContext()
                                         .setAuthentication(authentication);
