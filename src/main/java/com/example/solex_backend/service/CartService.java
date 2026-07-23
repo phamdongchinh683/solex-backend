@@ -73,37 +73,22 @@ public class CartService {
         return toCartItemResponse(item);
     }
 
-    public CartItemResponse updateCartItem(User user, Long cartItemId, String action) {
-        if (!action.equals("+") && !action.equals("-")) {
-            throw new BusinessException("Invalid action. Please use '+' or '-'");
-        }
+    public CartItemResponse updateCartItem(Long cartItemId, String action) {
 
         int delta = action.equals("+") ? 1 : -1;
 
-        if (delta < 0 && cartItemRepository.deleteIfExhausted(cartItemId, delta, user.getId()) > 0) {
+        CartItem item = cartItemRepository.adjustQuantity(cartItemId, delta);
+
+        if (item == null) {
+            cartItemRepository.deleteIfExhausted(cartItemId, delta);
             return null;
         }
 
-        int updated = cartItemRepository.adjustQuantity(cartItemId, delta, user.getId());
-        if (updated == 0) {
-            if (!cartItemRepository.existsById(cartItemId)) {
-                throw new ResourceNotFoundException("Cart item not found: " + cartItemId);
-            }
-            throw new BusinessException("You do not have permission to update this cart item");
-        }
-
-        CartItem item = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
         return toCartItemResponse(item);
     }
 
-    public void deleteCartItem(User user, Long cartItemId) {
-        CartItem item = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found: " + cartItemId));
-        if (!item.getCart().getUser().getId().equals(user.getId())) {
-            throw new BusinessException("You do not have permission to delete this cart item");
-        }
-        cartItemRepository.delete(item);
+    public void deleteCartItem(Long cartItemId) {
+        cartItemRepository.deleteById(cartItemId);
     }
 
     private Cart getOrCreateCart(User user) {

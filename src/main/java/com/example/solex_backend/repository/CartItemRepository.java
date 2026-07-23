@@ -14,36 +14,35 @@ import java.util.Optional;
 
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     List<CartItem> findByCart(Cart cart);
+
     Optional<CartItem> findByCartAndVariant(Cart cart, ProductVariant variant);
 
     @Modifying
     @Query(value = """
-        INSERT INTO cart_items (cart_id, variant_id, quantity, unit_price)
-        VALUES (:cartId, :variantId, :quantity, :unitPrice)
-        ON CONFLICT (cart_id, variant_id)
-        DO UPDATE SET quantity = cart_items.quantity + :quantity
-        """, nativeQuery = true)
+            INSERT INTO cart_items (cart_id, variant_id, quantity, unit_price)
+            VALUES (:cartId, :variantId, :quantity, :unitPrice)
+            ON CONFLICT (cart_id, variant_id)
+            DO UPDATE SET quantity = cart_items.quantity + :quantity
+            """, nativeQuery = true)
     int upsertQuantity(
             @Param("cartId") Long cartId,
             @Param("variantId") Long variantId,
             @Param("quantity") int quantity,
             @Param("unitPrice") BigDecimal unitPrice);
 
-    @Modifying
     @Query(value = """
-        UPDATE cart_items SET quantity = quantity + :delta
-        WHERE id = :itemId
-          AND cart_id IN (SELECT id FROM carts WHERE user_id = :userId)
-          AND quantity + :delta > 0
-        """, nativeQuery = true)
-    int adjustQuantity(@Param("itemId") Long itemId, @Param("delta") int delta, @Param("userId") Long userId);
+            UPDATE cart_items SET quantity = quantity + :delta
+            WHERE id = :itemId
+            AND quantity + :delta > 0
+            RETURNING *
+            """, nativeQuery = true)
+    CartItem adjustQuantity(@Param("itemId") Long itemId, @Param("delta") int delta);
 
     @Modifying
     @Query(value = """
-        DELETE FROM cart_items
-        WHERE id = :itemId
-          AND cart_id IN (SELECT id FROM carts WHERE user_id = :userId)
-          AND quantity + :delta <= 0
-        """, nativeQuery = true)
-    int deleteIfExhausted(@Param("itemId") Long itemId, @Param("delta") int delta, @Param("userId") Long userId);
+            DELETE FROM cart_items
+            WHERE id = :itemId
+            AND quantity + :delta <= 0
+            """, nativeQuery = true)
+    int deleteIfExhausted(@Param("itemId") Long itemId, @Param("delta") int delta);
 }

@@ -232,18 +232,15 @@ public class CustomerController {
             @AuthenticationPrincipal User user,
             @PathVariable Long cartItemId,
             @Valid @RequestBody UpdateCartItemRequest request) {
-        CartItemResponse response = cartService.updateCartItem(user, cartItemId, request.action());
-        return response != null
-                ? ApiResponse.ok("OK", response)
-                : ApiResponse.ok("Removed from cart", null);
+        CartItemResponse response = cartService.updateCartItem(cartItemId, request.action());
+        return ApiResponse.ok("OK", response);
     }
 
     @Operation(summary = "Remove item from cart")
     @DeleteMapping("/cart/items/{cartItemId}")
     public ApiResponse<Void> removeCartItem(
-            @AuthenticationPrincipal User user,
             @PathVariable Long cartItemId) {
-        cartService.deleteCartItem(user, cartItemId);
+        cartService.deleteCartItem(cartItemId);
         return ApiResponse.ok("OK", null);
     }
 

@@ -2,7 +2,6 @@ package com.example.solex_backend.service;
 
 import com.example.solex_backend.domain.Restaurant;
 import com.example.solex_backend.domain.User;
-import com.example.solex_backend.domain.UserDevice;
 import com.example.solex_backend.domain.UserOtp;
 import com.example.solex_backend.dto.request.LoginRequest;
 import com.example.solex_backend.dto.request.OperatorSignupRequest;
@@ -21,14 +20,12 @@ import com.example.solex_backend.repository.UserRepository;
 import com.example.solex_backend.util.Enums;
 import com.example.solex_backend.util.Jwt;
 import lombok.RequiredArgsConstructor;
-import com.example.solex_backend.service.UserCacheService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -56,13 +53,6 @@ public class AuthService {
 
     public AuthResponse signupOperator(OperatorSignupRequest request) {
         otpService.isOtpVerified(request.email(), request.phone());
-
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new BusinessException("Email already registered");
-        }
-        if (request.phone() != null && userRepository.findByPhone(request.phone()).isPresent()) {
-            throw new BusinessException("Phone number already registered");
-        }
 
         User operator = User.builder()
                 .email(request.email())
